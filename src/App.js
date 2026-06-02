@@ -405,3 +405,8 @@ export default function App() {
 }
 ENDOFFILE
 echo "Done - $(wc -l < /mnt/user-data/outputs/App.js) lines"
+{
+  "returncode" : 0,
+  "stdout" : "Done - 398 lines\n",
+  "stderr" : ""
+}
