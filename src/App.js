@@ -1,4 +1,13 @@
+wc -c /mnt/user-data/outputs/App.js
+{
+  "returncode" : 0,
+  "stdout" : "26625 \/mnt\/user-data\/outputs\/App.js\n",
+  "stderr" : ""
+}
+cat > /mnt/user-data/outputs/App.js << 'ENDOFFILE'
 import { useState } from "react";
+
+// ===================== DATA =====================
 
 const usageProfiles = [
   { id: "casual_gaming", icon: "🎮", label: "ألعاب عادية", desc: "تلعب بدون احتراف" },
@@ -77,69 +86,45 @@ const ramDatabase = [
   { id: "gskill_64", brand: "G.Skill", name: "Flare X5 64GB DDR5-6000", size: "64GB", speed: "6000MHz", priceSAR: 950, tier: 3, pros: ["AMD EXPO", "أداء استثنائي"], cons: ["سعر مرتفع"], tag: "فلاقشيب رام", color: "#6366f1" },
 ];
 
-// ── HELPERS ──────────────────────────────────────────────
+// ===================== HELPERS =====================
 function getGPURecs(usage, res, budget) {
   const b = budgetRanges.find(x => x.id === budget);
-  if (!b) return [];
-  return gpuDatabase
-    .filter(g => g.priceSAR <= b.max * 1.15 && g.priceSAR >= b.min * 0.85 && g.resolutions.includes(res))
-    .sort((a, c) => c.score[usage] - a.score[usage])
-    .slice(0, 3);
+  return gpuDatabase.filter(g => g.priceSAR <= b.max * 1.15 && g.priceSAR >= b.min * 0.85 && g.resolutions.includes(res)).sort((a, c) => c.score[usage] - a.score[usage]).slice(0, 3);
 }
-
 function getCPURecs(usage, budget) {
   const b = budgetRanges.find(x => x.id === budget);
-  if (!b) return [];
-  return cpuDatabase
-    .filter(c => c.priceSAR <= b.max * 0.7)
-    .sort((a, c) => c.score[usage] - a.score[usage])
-    .slice(0, 3);
+  return cpuDatabase.filter(c => c.priceSAR <= b.max * 0.6).sort((a, c) => c.score[usage] - a.score[usage]).slice(0, 3);
 }
-
 function getPSURecs(budget) {
   const b = budgetRanges.find(x => x.id === budget);
-  if (!b) return [];
-  return psuDatabase
-    .filter(p => p.priceSAR <= b.max * 0.4)
-    .sort((a, c) => c.watt - a.watt)
-    .slice(0, 2);
+  return psuDatabase.filter(p => p.priceSAR <= b.max * 0.3).sort((a, c) => c.watt - a.watt).slice(0, 2);
 }
-
-// FIX: getMBRecs now receives socket directly (not derived from usage string)
-function getMBRecs(socket, budget) {
+function getMBRecs(cpuSocket, budget) {
   const b = budgetRanges.find(x => x.id === budget);
-  if (!b || !socket) return [];
-  return mbDatabase
-    .filter(m => m.socket === socket && m.priceSAR <= b.max * 0.5)
-    .sort((a, c) => c.priceSAR - a.priceSAR)
-    .slice(0, 2);
+  return mbDatabase.filter(m => m.socket === cpuSocket && m.priceSAR <= b.max * 0.4).sort((a, c) => c.priceSAR - a.priceSAR).slice(0, 2);
 }
-
 function getRAMRecs(budget) {
   const b = budgetRanges.find(x => x.id === budget);
-  if (!b) return [];
-  return ramDatabase
-    .filter(r => r.priceSAR <= b.max * 0.35)
-    .sort((a, c) => c.priceSAR - a.priceSAR)
-    .slice(0, 2);
+  return ramDatabase.filter(r => r.priceSAR <= b.max * 0.2).sort((a, c) => c.priceSAR - a.priceSAR).slice(0, 2);
 }
-
 function getCompatibleGPUs(cpuId) { return gpuDatabase.filter(g => g.compatibleCPUs.includes(cpuId)); }
 function getCompatibleCPUs(gpuId) { return cpuDatabase.filter(c => c.compatibleGPUs.includes(gpuId)); }
 
+// Full build recommendation
 function getFullBuild(usage, fbBudget) {
   const b = fullBuildBudgets.find(x => x.id === fbBudget);
-  if (!b) return null;
   const total = b.max;
+
+  // allocate budget: GPU 40%, CPU 20%, MB 12%, RAM 10%, PSU 8%, rest buffer
   const gpuMax = total * 0.42;
   const cpuMax = total * 0.22;
-  const mbMax  = total * 0.14;
+  const mbMax = total * 0.14;
   const ramMax = total * 0.12;
   const psuMax = total * 0.10;
 
   const gpu = gpuDatabase.filter(g => g.priceSAR <= gpuMax).sort((a, c) => c.score[usage] - a.score[usage])[0];
   const cpu = cpuDatabase.filter(c => c.priceSAR <= cpuMax).sort((a, c) => c.score[usage] - a.score[usage])[0];
-  const mb  = cpu ? mbDatabase.filter(m => m.socket === cpu.socket && m.priceSAR <= mbMax).sort((a, c) => c.priceSAR - a.priceSAR)[0] : null;
+  const mb = cpu ? mbDatabase.filter(m => m.socket === cpu.socket && m.priceSAR <= mbMax).sort((a, c) => c.priceSAR - a.priceSAR)[0] : null;
   const ram = ramDatabase.filter(r => r.priceSAR <= ramMax).sort((a, c) => c.priceSAR - a.priceSAR)[0];
   const psu = psuDatabase.filter(p => p.priceSAR <= psuMax).sort((a, c) => c.watt - a.watt)[0];
 
@@ -147,18 +132,14 @@ function getFullBuild(usage, fbBudget) {
   return { gpu, cpu, mb, ram, psu, totalPrice };
 }
 
-// ── COMPONENTS ───────────────────────────────────────────
+// ===================== COMPONENTS =====================
 function ScoreBar({ score, color }) {
-  return (
-    <div style={{ background: "rgba(255,255,255,0.06)", borderRadius: 8, height: 7, overflow: "hidden", marginTop: 4 }}>
-      <div style={{ height: "100%", width: ${score}%, background: color, borderRadius: 8 }} />
-    </div>
-  );
+  return <div style={{ background: "rgba(255,255,255,0.06)", borderRadius: 8, height: 7, overflow: "hidden", marginTop: 4 }}><div style={{ height: "100%", width: `${score}%`, background: color, borderRadius: 8 }} /></div>;
 }
 
 function MiniCard({ label, name, price, color, extra }) {
   return (
-    <div style={{ background: "rgba(255,255,255,0.04)", border: 1px solid ${color}33, borderRadius: 12, padding: "12px 14px", marginBottom: 8 }}>
+    <div style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${color}33`, borderRadius: 12, padding: "12px 14px", marginBottom: 8 }}>
       <div style={{ fontSize: 10, color, fontWeight: 700, marginBottom: 2 }}>{label}</div>
       <div style={{ fontWeight: 800, fontSize: 13, color: "#e2e8f0" }}>{name}</div>
       {extra && <div style={{ fontSize: 10, color: "#64748b", marginTop: 2 }}>{extra}</div>}
@@ -170,45 +151,24 @@ function MiniCard({ label, name, price, color, extra }) {
 function CardBig({ item, type, usage, onViewCompat }) {
   const score = usage ? item.score?.[usage] : null;
   const color = item.color || "#8b5cf6";
-  const gpuPrefix = type === "gpu" ? "NVIDIA " : "";
   return (
-    <div style={{ background: "rgba(15,23,42,0.85)", border: 1.5px solid ${color}55, borderRadius: 20, padding: "18px", marginBottom: 10 }}>
+    <div style={{ background: "rgba(15,23,42,0.85)", border: `1.5px solid ${color}55`, borderRadius: 20, padding: "18px", marginBottom: 10 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 8 }}>
         <div>
-          <div style={{ fontSize: 10, color, fontWeight: 700, marginBottom: 3 }}>
-            {item.brand || "NVIDIA"} · {item.gen || item.vram || item.cert || item.chipset || item.speed}
-          </div>
-          <div style={{ fontSize: 19, fontWeight: 900, color: "#e2e8f0" }}>{gpuPrefix}{item.name}</div>
-          <div style={{ display: "inline-block", marginTop: 5, background: color + "22", border: 1px solid ${color}44, borderRadius: 7, padding: "2px 9px", fontSize: 10, color }}>{item.tag}</div>
+          <div style={{ fontSize: 10, color, fontWeight: 700, marginBottom: 3 }}>{item.brand || "NVIDIA"} · {item.gen || item.vram || item.cert || item.chipset || item.speed}</div>
+          <div style={{ fontSize: 19, fontWeight: 900, color: "#e2e8f0" }}>{type === "gpu" ? "NVIDIA " : ""}{item.name}</div>
+          <div style={{ display: "inline-block", marginTop: 5, background: color + "22", border: `1px solid ${color}44`, borderRadius: 7, padding: "2px 9px", fontSize: 10, color }}>{item.tag}</div>
         </div>
         <div style={{ textAlign: "left" }}>
           <div style={{ fontSize: 20, fontWeight: 900, color: "#e2e8f0" }}>~{item.priceSAR?.toLocaleString()} ر.س</div>
-          {score !== null && score !== undefined && (
-            <>
-              <div style={{ fontSize: 10, color: "#64748b", marginTop: 2 }}>ملاءمة: {score}%</div>
-              <ScoreBar score={score} color={color} />
-            </>
-          )}
+          {score && <><div style={{ fontSize: 10, color: "#64748b", marginTop: 2 }}>ملاءمة: {score}%</div><ScoreBar score={score} color={color} /></>}
         </div>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 12 }}>
-        <div>
-          <div style={{ fontSize: 10, color: "#22c55e", fontWeight: 700, marginBottom: 5 }}>✅ مميزات</div>
-          {item.pros?.map((p, i) => <div key={i} style={{ fontSize: 10, color: "#94a3b8", marginBottom: 2 }}>• {p}</div>)}
-        </div>
-        <div>
-          <div style={{ fontSize: 10, color: "#ef4444", fontWeight: 700, marginBottom: 5 }}>⚠️ ملاحظات</div>
-          {item.cons?.map((c, i) => <div key={i} style={{ fontSize: 10, color: "#94a3b8", marginBottom: 2 }}>• {c}</div>)}
-        </div>
+        <div><div style={{ fontSize: 10, color: "#22c55e", fontWeight: 700, marginBottom: 5 }}>✅ مميزات</div>{item.pros?.map((p, i) => <div key={i} style={{ fontSize: 10, color: "#94a3b8", marginBottom: 2 }}>• {p}</div>)}</div>
+        <div><div style={{ fontSize: 10, color: "#ef4444", fontWeight: 700, marginBottom: 5 }}>⚠️ ملاحظات</div>{item.cons?.map((c, i) => <div key={i} style={{ fontSize: 10, color: "#94a3b8", marginBottom: 2 }}>• {c}</div>)}</div>
       </div>
-      {onViewCompat && (
-        <button
-          onClick={() => onViewCompat(item, type)}
-          style={{ marginTop: 12, width: "100%", background: color + "15", border: 1px solid ${color}44, borderRadius: 9, padding: "8px", color, fontWeight: 700, cursor: "pointer", fontSize: 11 }}
-        >
-          🔗 وش يتوافق مع هذا {type === "gpu" ? "الكرت" : "المعالج"}؟
-        </button>
-      )}
+      {onViewCompat && <button onClick={() => onViewCompat(item, type)} style={{ marginTop: 12, width: "100%", background: color + "15", border: `1px solid ${color}44`, borderRadius: 9, padding: "8px", color, fontWeight: 700, cursor: "pointer", fontSize: 11 }}>🔗 وش يتوافق مع هذا {type === "gpu" ? "الكرت" : "المعالج"}؟</button>}
     </div>
   );
 }
@@ -219,114 +179,68 @@ function CompatModal({ item, type, onClose }) {
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
       <div style={{ background: "#0d1117", border: "1.5px solid rgba(99,102,241,0.4)", borderRadius: 22, padding: 22, maxWidth: 480, width: "100%", maxHeight: "80vh", overflowY: "auto" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-          <div style={{ fontWeight: 800, fontSize: 14, color: "#e2e8f0" }}>
-            {type === "gpu" ? معالجات تشتغل مع ${item.name} : كروت تشتغل مع ${item.name}}
-          </div>
+          <div style={{ fontWeight: 800, fontSize: 14, color: "#e2e8f0" }}>{type === "gpu" ? `معالجات تشتغل مع ${item.name}` : `كروت تشتغل مع ${item.name}`}</div>
           <button onClick={onClose} style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer", fontSize: 20 }}>✕</button>
         </div>
         {list.length === 0 && <div style={{ color: "#64748b", textAlign: "center", padding: 20 }}>لا يوجد في قاعدة البيانات</div>}
-        {list.map(x => (
-          <div key={x.id} style={{ background: "rgba(255,255,255,0.04)", borderRadius: 11, padding: "11px 14px", marginBottom: 8, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <div>
-              <div style={{ fontWeight: 700, fontSize: 13, color: "#e2e8f0" }}>{type === "gpu" ? "" : "NVIDIA "}{x.name}</div>
-              <div style={{ fontSize: 10, color: "#64748b" }}>{x.brand || x.vram} {x.gen || ""}</div>
-            </div>
-            <div style={{ fontSize: 13, fontWeight: 800, color: "#06b6d4" }}>~{x.priceSAR?.toLocaleString()} ر.س</div>
-          </div>
-        ))}
+        {list.map(x => <div key={x.id} style={{ background: "rgba(255,255,255,0.04)", borderRadius: 11, padding: "11px 14px", marginBottom: 8, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div><div style={{ fontWeight: 700, fontSize: 13, color: "#e2e8f0" }}>{type === "gpu" ? "" : "NVIDIA "}{x.name}</div><div style={{ fontSize: 10, color: "#64748b" }}>{x.brand || x.vram} {x.gen || ""}</div></div>
+          <div style={{ fontSize: 13, fontWeight: 800, color: "#06b6d4" }}>~{x.priceSAR?.toLocaleString()} ر.س</div>
+        </div>)}
         <button onClick={onClose} style={{ width: "100%", background: "linear-gradient(135deg,#6366f1,#06b6d4)", border: "none", borderRadius: 11, padding: "11px", color: "#fff", fontWeight: 700, cursor: "pointer", marginTop: 6 }}>إغلاق</button>
       </div>
     </div>
   );
 }
 
-// ── SOCKET SELECTOR (for MB recommendations) ─────────────
-function SocketSelector({ onSelect }) {
-  return (
-    <div>
-      <h2 style={{ textAlign: "center", fontSize: 16, fontWeight: 700, marginBottom: 14, color: "#94a3b8" }}>ما هو سوكيت المعالج عندك؟</h2>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-        {[
-          { id: "LGA1700", label: "LGA1700", desc: "Intel 12th–14th Gen", color: "#3b82f6" },
-          { id: "AM5", label: "AM5", desc: "AMD Ryzen 7000/9000", color: "#ef4444" },
-        ].map(s => (
-          <button key={s.id} onClick={() => onSelect(s.id)} style={{ background: "rgba(15,23,42,0.8)", border: 1.5px solid ${s.color}44, borderRadius: 13, padding: "18px 14px", cursor: "pointer", textAlign: "center" }}>
-            <div style={{ fontWeight: 900, fontSize: 16, color: s.color, marginBottom: 4 }}>{s.label}</div>
-            <div style={{ fontSize: 11, color: "#64748b" }}>{s.desc}</div>
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// ── MAIN ─────────────────────────────────────────────────
+// ===================== MAIN =====================
 export default function App() {
-  const [screen, setScreen]       = useState("home");
+  const [screen, setScreen] = useState("home"); // home | single | full
   const [singleType, setSingleType] = useState(null);
-  const [step, setStep]           = useState(1);
-  const [usages, setUsages]       = useState([]);
+  const [step, setStep] = useState(1);
+  const [usages, setUsages] = useState([]);
   const [resolution, setResolution] = useState(null);
-  const [budget, setBudget]       = useState(null);
-  const [fbBudget, setFbBudget]   = useState(null);
-  const [mbSocket, setMbSocket]   = useState(null); // FIX: explicit socket state for MB
+  const [budget, setBudget] = useState(null);
+  const [fbBudget, setFbBudget] = useState(null);
   const [showResult, setShowResult] = useState(false);
   const [compatItem, setCompatItem] = useState(null);
 
   const usage = usages[0] || null;
 
-  // Results
-  const gpuRecs = showResult && singleType === "gpu"  ? getGPURecs(usage, resolution || "1440p", budget) : [];
-  const cpuRecs = showResult && singleType === "cpu"  ? getCPURecs(usage, budget) : [];
-  const psuRecs = showResult && singleType === "psu"  ? getPSURecs(budget) : [];
-  const mbRecs  = showResult && singleType === "mb"   ? getMBRecs(mbSocket, budget) : []; // FIX: pass mbSocket
-  const ramRecs = showResult && singleType === "ram"  ? getRAMRecs(budget) : [];
+  const gpuRecs = showResult && (singleType === "gpu") ? getGPURecs(usage, resolution || "1440p", budget) : [];
+  const cpuRecs = showResult && (singleType === "cpu") ? getCPURecs(usage, budget) : [];
+  const psuRecs = showResult && (singleType === "psu") ? getPSURecs(budget) : [];
+  const mbRecs = showResult && (singleType === "mb") ? getMBRecs(usage?.includes("amd") ? "AM5" : "LGA1700", budget) : [];
+  const ramRecs = showResult && (singleType === "ram") ? getRAMRecs(budget) : [];
   const fullBuild = showResult && screen === "full" && fbBudget ? getFullBuild(usage, fbBudget) : null;
 
-  const reset = () => {
-    setScreen("home"); setSingleType(null); setStep(1); setUsages([]);
-    setResolution(null); setBudget(null); setFbBudget(null);
-    setMbSocket(null); setShowResult(false); setCompatItem(null);
-  };
-
-  const toggleUsage = (id) =>
-    setUsages(prev => prev.includes(id) ? prev.filter(u => u !== id) : prev.length < 3 ? [...prev, id] : prev);
+  const reset = () => { setScreen("home"); setSingleType(null); setStep(1); setUsages([]); setResolution(null); setBudget(null); setFbBudget(null); setShowResult(false); setCompatItem(null); };
+  const toggleUsage = (id) => setUsages(prev => prev.includes(id) ? prev.filter(u => u !== id) : prev.length < 3 ? [...prev, id] : prev);
 
   const singleTypes = [
     { id: "gpu", icon: "🖥️", label: "كرت شاشة" },
     { id: "cpu", icon: "⚡", label: "معالج" },
     { id: "psu", icon: "🔌", label: "باور سبلاي" },
-    { id: "mb",  icon: "🔧", label: "مذربورد" },
+    { id: "mb", icon: "🔧", label: "مذربورد" },
     { id: "ram", icon: "💾", label: "رامات" },
   ];
 
-  const typeColors = { gpu: "#8b5cf6", cpu: "#ef4444", psu: "#22c55e", mb: "#3b82f6", ram: "#f59e0b" };
-  const typeLabels = { gpu: "كروت الشاشة الموصى بها", cpu: "المعالجات الموصى بها", psu: "باور سبلاي الموصى به", mb: "المذربورد الموصى به", ram: "الرامات الموصى بها" };
-  const typeIcons  = { gpu: "🖥️", cpu: "⚡", psu: "🔌", mb: "🔧", ram: "💾" };
-
-  // Determine step max for single flow (MB has extra socket step)
-  const totalSteps = singleType === "gpu" ? 3 : singleType === "mb" ? 3 : 2;
-
   return (
     <div style={{ minHeight: "100vh", background: "linear-gradient(135deg,#0a0a0f,#0d1117,#0a0f1a)", fontFamily: "'Tajawal',sans-serif", direction: "rtl", color: "#e2e8f0", padding: "20px 16px" }}>
-      <style>{@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800;900&display=swap');*{box-sizing:border-box;}button:active{transform:scale(0.97);}}</style>
-
       {compatItem && <CompatModal item={compatItem.item} type={compatItem.type} onClose={() => setCompatItem(null)} />}
-
       <div style={{ maxWidth: 700, margin: "0 auto" }}>
+
         {/* Header */}
         <div style={{ textAlign: "center", marginBottom: 24 }}>
-          <h1 style={{ fontSize: "clamp(20px,5vw,34px)", fontWeight: 900, margin: 0, background: "linear-gradient(90deg,#e2e8f0,#06b6d4,#6366f1)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-            🖥️ مساعد اختيار المكونات
-          </h1>
+          <h1 style={{ fontSize: "clamp(20px,5vw,34px)", fontWeight: 900, margin: 0, background: "linear-gradient(90deg,#e2e8f0,#06b6d4,#6366f1)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>🖥️ مساعد اختيار المكونات</h1>
           <p style={{ color: "#64748b", fontSize: 12, marginTop: 4 }}>GPU · CPU · PSU · Motherboard · RAM</p>
         </div>
 
-        {/* ── HOME ── */}
+        {/* HOME */}
         {screen === "home" && (
           <div>
             <div style={{ textAlign: "center", fontSize: 15, fontWeight: 700, color: "#94a3b8", marginBottom: 14 }}>وش تبي؟</div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
               <button onClick={() => setScreen("single")} style={{ background: "rgba(15,23,42,0.8)", border: "1.5px solid rgba(99,102,241,0.3)", borderRadius: 18, padding: "22px 16px", cursor: "pointer", textAlign: "center" }}>
                 <div style={{ fontSize: 32, marginBottom: 8 }}>🔍</div>
                 <div style={{ fontWeight: 800, fontSize: 14, color: "#e2e8f0", marginBottom: 4 }}>اختيار قطعة واحدة</div>
@@ -341,158 +255,82 @@ export default function App() {
           </div>
         )}
 
-        {/* ── SINGLE FLOW ── */}
+        {/* SINGLE PART */}
         {screen === "single" && !showResult && (
           <>
-            {/* Progress dots */}
             <div style={{ display: "flex", justifyContent: "center", gap: 8, marginBottom: 20 }}>
-              {Array.from({ length: totalSteps || 2 }, (_, i) => i + 1).map(s => (
-                <div key={s} style={{ width: s === step ? 30 : 9, height: 9, borderRadius: 5, background: s === step ? "linear-gradient(90deg,#6366f1,#06b6d4)" : s < step ? "#6366f1" : "#1e293b", transition: "all 0.4s" }} />
-              ))}
+              {[1, 2, 3].map(s => <div key={s} style={{ width: s === step ? 30 : 9, height: 9, borderRadius: 5, background: s === step ? "linear-gradient(90deg,#6366f1,#06b6d4)" : s < step ? "#6366f1" : "#1e293b", transition: "all 0.4s" }} />)}
             </div>
 
-            {/* Step 1a: choose part type */}
             {step === 1 && !singleType && (
               <div>
                 <div style={{ textAlign: "center", fontSize: 15, fontWeight: 700, color: "#94a3b8", marginBottom: 14 }}>وش القطعة؟</div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 9 }}>
-                  {singleTypes.map(t => (
-                    <button key={t.id} onClick={() => setSingleType(t.id)} style={{ background: "rgba(15,23,42,0.8)", border: "1.5px solid rgba(255,255,255,0.07)", borderRadius: 14, padding: "16px 10px", cursor: "pointer", textAlign: "center" }}>
-                      <div style={{ fontSize: 24, marginBottom: 6 }}>{t.icon}</div>
-                      <div style={{ fontWeight: 700, fontSize: 12, color: "#e2e8f0" }}>{t.label}</div>
-                    </button>
-                  ))}
+                  {singleTypes.map(t => <button key={t.id} onClick={() => setSingleType(t.id)} style={{ background: "rgba(15,23,42,0.8)", border: "1.5px solid rgba(255,255,255,0.07)", borderRadius: 14, padding: "16px 10px", cursor: "pointer", textAlign: "center" }}>
+                    <div style={{ fontSize: 24, marginBottom: 6 }}>{t.icon}</div>
+                    <div style={{ fontWeight: 700, fontSize: 12, color: "#e2e8f0" }}>{t.label}</div>
+                  </button>)}
                 </div>
                 <button onClick={() => { setScreen("home"); setStep(1); }} style={{ background: "none", border: "none", color: "#475569", cursor: "pointer", fontSize: 12, display: "block", margin: "14px auto 0" }}>← رجوع</button>
               </div>
             )}
 
-            {/* Step 1b: usage (after part chosen) */}
-            {step === 1 && singleType && singleType !== "psu" && (
+            {step === 1 && singleType && (
               <div>
                 <h2 style={{ textAlign: "center", fontSize: 16, fontWeight: 700, marginBottom: 6, color: "#94a3b8" }}>وش راح تستخدم الجهاز فيه؟</h2>
                 <p style={{ textAlign: "center", fontSize: 11, color: "#475569", marginBottom: 14 }}>اختر حتى 3 استخدامات</p>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 9 }}>
-                  {usageProfiles.map(u => {
-                    const sel = usages.includes(u.id);
-                    return (
-                      <button key={u.id} onClick={() => toggleUsage(u.id)} style={{ background: sel ? "rgba(99,102,241,0.2)" : "rgba(15,23,42,0.8)", border: sel ? "1.5px solid #6366f1" : "1.5px solid rgba(255,255,255,0.06)", borderRadius: 13, padding: "12px 10px", cursor: "pointer", textAlign: "right" }}>
-                        <div style={{ fontSize: 22, marginBottom: 3 }}>{u.icon}</div>
-                        <div style={{ fontWeight: 700, fontSize: 12, color: "#e2e8f0", marginBottom: 1 }}>{u.label}</div>
-                        <div style={{ fontSize: 10, color: "#64748b" }}>{u.desc}</div>
-                        {sel && <div style={{ fontSize: 9, color: "#6366f1", marginTop: 3, fontWeight: 700 }}>✓ محدد</div>}
-                      </button>
-                    );
-                  })}
+                  {usageProfiles.map(u => { const sel = usages.includes(u.id); return <button key={u.id} onClick={() => toggleUsage(u.id)} style={{ background: sel ? "rgba(99,102,241,0.2)" : "rgba(15,23,42,0.8)", border: sel ? "1.5px solid #6366f1" : "1.5px solid rgba(255,255,255,0.06)", borderRadius: 13, padding: "12px 10px", cursor: "pointer", textAlign: "right" }}>
+                    <div style={{ fontSize: 22, marginBottom: 3 }}>{u.icon}</div>
+                    <div style={{ fontWeight: 700, fontSize: 12, color: "#e2e8f0", marginBottom: 1 }}>{u.label}</div>
+                    <div style={{ fontSize: 10, color: "#64748b" }}>{u.desc}</div>
+                    {sel && <div style={{ fontSize: 9, color: "#6366f1", marginTop: 3, fontWeight: 700 }}>✓ محدد</div>}
+                  </button>; })}
                 </div>
-                <button
-                  disabled={usages.length === 0}
-                  onClick={() => setStep(singleType === "gpu" ? 2 : singleType === "mb" ? 2 : 2)}
-                  style={{ width: "100%", marginTop: 12, background: usages.length ? "linear-gradient(135deg,#6366f1,#06b6d4)" : "#1e293b", border: "none", borderRadius: 11, padding: "12px", color: usages.length ? "#fff" : "#475569", fontWeight: 700, cursor: usages.length ? "pointer" : "default", fontSize: 13 }}
-                >التالي ←</button>
-                <button onClick={() => setSingleType(null)} style={{ background: "none", border: "none", color: "#475569", cursor: "pointer", fontSize: 12, display: "block", margin: "10px auto 0" }}>← رجوع</button>
+                <button disabled={usages.length === 0} onClick={() => setStep(singleType === "gpu" ? 2 : 3)} style={{ width: "100%", marginTop: 12, background: usages.length ? "linear-gradient(135deg,#6366f1,#06b6d4)" : "#1e293b", border: "none", borderRadius: 11, padding: "12px", color: usages.length ? "#fff" : "#475569", fontWeight: 700, cursor: usages.length ? "pointer" : "default", fontSize: 13 }}>التالي ←</button>
               </div>
             )}
 
-            {/* PSU: skip usage, go straight to budget */}
-            {step === 1 && singleType === "psu" && (
-              <div>
-                <h2 style={{ textAlign: "center", fontSize: 16, fontWeight: 700, marginBottom: 14, color: "#94a3b8" }}>كم ميزانيتك للباور سبلاي؟</h2>
-                {budgetRanges.map(b => (
-                  <button key={b.id} onClick={() => { setBudget(b.id); setShowResult(true); }} style={{ background: "rgba(15,23,42,0.8)", border: "1.5px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: "13px 18px", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", marginBottom: 8 }}>
-                    <span style={{ fontWeight: 700, fontSize: 13, color: "#e2e8f0" }}>{b.label}</span>
-                    <span style={{ color: "#8b5cf6" }}>←</span>
-                  </button>
-                ))}
-                <button onClick={() => setSingleType(null)} style={{ background: "none", border: "none", color: "#475569", cursor: "pointer", fontSize: 12, display: "block", margin: "8px auto 0" }}>← رجوع</button>
-              </div>
-            )}
-
-            {/* Step 2 for GPU: resolution */}
             {step === 2 && singleType === "gpu" && (
               <div>
                 <h2 style={{ textAlign: "center", fontSize: 16, fontWeight: 700, marginBottom: 14, color: "#94a3b8" }}>دقة شاشتك؟</h2>
-                {resolutions.map(r => (
-                  <button key={r.id} onClick={() => { setResolution(r.id); setStep(3); }} style={{ background: "rgba(15,23,42,0.8)", border: "1.5px solid rgba(255,255,255,0.06)", borderRadius: 13, padding: "16px 18px", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", marginBottom: 9 }}>
-                    <div><div style={{ fontWeight: 800, fontSize: 16, color: "#e2e8f0" }}>{r.label}</div><div style={{ fontSize: 11, color: "#64748b" }}>{r.desc}</div></div>
-                    <div style={{ color: "#06b6d4" }}>←</div>
-                  </button>
-                ))}
+                {resolutions.map(r => <button key={r.id} onClick={() => { setResolution(r.id); setStep(3); }} style={{ background: "rgba(15,23,42,0.8)", border: "1.5px solid rgba(255,255,255,0.06)", borderRadius: 13, padding: "16px 18px", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", marginBottom: 9 }}>
+                  <div><div style={{ fontWeight: 800, fontSize: 16, color: "#e2e8f0" }}>{r.label}</div><div style={{ fontSize: 11, color: "#64748b" }}>{r.desc}</div></div>
+                  <div style={{ color: "#06b6d4" }}>←</div>
+                </button>)}
                 <button onClick={() => setStep(1)} style={{ background: "none", border: "none", color: "#475569", cursor: "pointer", fontSize: 12, display: "block", margin: "8px auto 0" }}>← رجوع</button>
               </div>
             )}
 
-            {/* Step 2 for MB: socket selector (FIX) */}
-            {step === 2 && singleType === "mb" && (
-              <div>
-                <SocketSelector onSelect={(sock) => { setMbSocket(sock); setStep(3); }} />
-                <button onClick={() => setStep(1)} style={{ background: "none", border: "none", color: "#475569", cursor: "pointer", fontSize: 12, display: "block", margin: "14px auto 0" }}>← رجوع</button>
-              </div>
-            )}
-
-            {/* Step 2 for CPU/RAM: budget */}
-            {step === 2 && (singleType === "cpu" || singleType === "ram") && (
+            {step === 3 && (
               <div>
                 <h2 style={{ textAlign: "center", fontSize: 16, fontWeight: 700, marginBottom: 14, color: "#94a3b8" }}>كم ميزانيتك للقطعة؟</h2>
-                {budgetRanges.map(b => (
-                  <button key={b.id} onClick={() => { setBudget(b.id); setShowResult(true); }} style={{ background: "rgba(15,23,42,0.8)", border: "1.5px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: "13px 18px", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", marginBottom: 8 }}>
-                    <span style={{ fontWeight: 700, fontSize: 13, color: "#e2e8f0" }}>{b.label}</span>
-                    <span style={{ color: "#8b5cf6" }}>←</span>
-                  </button>
-                ))}
-                <button onClick={() => setStep(1)} style={{ background: "none", border: "none", color: "#475569", cursor: "pointer", fontSize: 12, display: "block", margin: "8px auto 0" }}>← رجوع</button>
-              </div>
-            )}
-
-            {/* Step 3: budget (GPU and MB) */}
-            {step === 3 && (singleType === "gpu" || singleType === "mb") && (
-              <div>
-                <h2 style={{ textAlign: "center", fontSize: 16, fontWeight: 700, marginBottom: 14, color: "#94a3b8" }}>كم ميزانيتك للقطعة؟</h2>
-                {budgetRanges.map(b => (
-                  <button key={b.id} onClick={() => { setBudget(b.id); setShowResult(true); }} style={{ background: "rgba(15,23,42,0.8)", border: "1.5px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: "13px 18px", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", marginBottom: 8 }}>
-                    <span style={{ fontWeight: 700, fontSize: 13, color: "#e2e8f0" }}>{b.label}</span>
-                    <span style={{ color: "#8b5cf6" }}>←</span>
-                  </button>
-                ))}
-                <button onClick={() => setStep(2)} style={{ background: "none", border: "none", color: "#475569", cursor: "pointer", fontSize: 12, display: "block", margin: "8px auto 0" }}>← رجوع</button>
+                {budgetRanges.map(b => <button key={b.id} onClick={() => { setBudget(b.id); setShowResult(true); }} style={{ background: "rgba(15,23,42,0.8)", border: "1.5px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: "13px 18px", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", marginBottom: 8 }}>
+                  <span style={{ fontWeight: 700, fontSize: 13, color: "#e2e8f0" }}>{b.label}</span>
+                  <span style={{ color: "#8b5cf6" }}>←</span>
+                </button>)}
+                <button onClick={() => setStep(singleType === "gpu" ? 2 : 1)} style={{ background: "none", border: "none", color: "#475569", cursor: "pointer", fontSize: 12, display: "block", margin: "8px auto 0" }}>← رجوع</button>
               </div>
             )}
           </>
         )}
 
-        {/* ── SINGLE RESULTS ── */}
+        {/* SINGLE RESULTS */}
         {screen === "single" && showResult && (
           <div>
-            <div style={{ textAlign: "center", marginBottom: 14 }}>
-              <div style={{ color: typeColors[singleType] || "#8b5cf6", fontWeight: 700, fontSize: 13 }}>
-                {typeIcons[singleType]} {typeLabels[singleType]}
-              </div>
+            <div style={{ textAlign: "center", fontSize: 12, color: "#64748b", marginBottom: 14 }}>
+              {singleType === "gpu" && <div style={{ color: "#8b5cf6", fontWeight: 700, fontSize: 13 }}>🖥️ كروت الشاشة الموصى بها</div>}
+              {singleType === "cpu" && <div style={{ color: "#ef4444", fontWeight: 700, fontSize: 13 }}>⚡ المعالجات الموصى بها</div>}
+              {singleType === "psu" && <div style={{ color: "#22c55e", fontWeight: 700, fontSize: 13 }}>🔌 باور سبلاي الموصى به</div>}
+              {singleType === "mb" && <div style={{ color: "#3b82f6", fontWeight: 700, fontSize: 13 }}>🔧 المذربورد الموصى به</div>}
+              {singleType === "ram" && <div style={{ color: "#f59e0b", fontWeight: 700, fontSize: 13 }}>💾 الرامات الموصى بها</div>}
             </div>
 
-            {(() => {
-              const lists = { gpu: gpuRecs, cpu: cpuRecs, psu: psuRecs, mb: mbRecs, ram: ramRecs };
-              const items = lists[singleType] || [];
-              if (items.length === 0) {
-                return (
-                  <div style={{ textAlign: "center", padding: "30px 20px", color: "#64748b" }}>
-                    <div style={{ fontSize: 40, marginBottom: 12 }}>😕</div>
-                    <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8 }}>ما لقينا نتائج بهالميزانية</div>
-                    <div style={{ fontSize: 12 }}>جرب تختار ميزانية أعلى</div>
-                  </div>
-                );
-              }
-              return items.map((item, i) => (
-                <div key={item.id}>
-                  {i === 0 && <div style={{ fontSize: 10, color: "#06b6d4", fontWeight: 700, marginBottom: 5 }}>✅ الاختيار الأمثل</div>}
-                  <CardBig
-                    item={item}
-                    type={singleType}
-                    usage={["gpu","cpu"].includes(singleType) ? usage : null}
-                    onViewCompat={["gpu","cpu"].includes(singleType) ? (it, t) => setCompatItem({ item: it, type: t }) : null}
-                  />
-                </div>
-              ));
-            })()}
+            {singleType === "gpu" && gpuRecs.map((g, i) => <div key={g.id}>{i === 0 && <div style={{ fontSize: 10, color: "#06b6d4", fontWeight: 700, marginBottom: 5 }}>✅ الاختيار الأمثل</div>}<CardBig item={g} type="gpu" usage={usage} onViewCompat={(item, type) => setCompatItem({ item, type })} /></div>)}
+            {singleType === "cpu" && cpuRecs.map((c, i) => <div key={c.id}>{i === 0 && <div style={{ fontSize: 10, color: "#06b6d4", fontWeight: 700, marginBottom: 5 }}>✅ الاختيار الأمثل</div>}<CardBig item={c} type="cpu" usage={usage} onViewCompat={(item, type) => setCompatItem({ item, type })} /></div>)}
+            {singleType === "psu" && psuRecs.map((p, i) => <div key={p.id}>{i === 0 && <div style={{ fontSize: 10, color: "#06b6d4", fontWeight: 700, marginBottom: 5 }}>✅ الاختيار الأمثل</div>}<CardBig item={p} type="psu" usage={null} onViewCompat={null} /></div>)}
+            {singleType === "mb" && mbRecs.map((m, i) => <div key={m.id}>{i === 0 && <div style={{ fontSize: 10, color: "#06b6d4", fontWeight: 700, marginBottom: 5 }}>✅ الاختيار الأمثل</div>}<CardBig item={m} type="mb" usage={null} onViewCompat={null} /></div>)}
+            {singleType === "ram" && ramRecs.map((r, i) => <div key={r.id}>{i === 0 && <div style={{ fontSize: 10, color: "#06b6d4", fontWeight: 700, marginBottom: 5 }}>✅ الاختيار الأمثل</div>}<CardBig item={r} type="ram" usage={null} onViewCompat={null} /></div>)}
 
             <div style={{ background: "rgba(15,23,42,0.5)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 11, padding: "10px 14px", fontSize: 10, color: "#475569", textAlign: "center", marginBottom: 12 }}>
               💡 الأسعار تقريبية · قد تختلف حسب المتجر
@@ -501,13 +339,11 @@ export default function App() {
           </div>
         )}
 
-        {/* ── FULL BUILD FLOW ── */}
+        {/* FULL BUILD */}
         {screen === "full" && !showResult && (
           <div>
             <div style={{ display: "flex", justifyContent: "center", gap: 8, marginBottom: 20 }}>
-              {[1, 2].map(s => (
-                <div key={s} style={{ width: s === step ? 30 : 9, height: 9, borderRadius: 5, background: s === step ? "linear-gradient(90deg,#6366f1,#06b6d4)" : s < step ? "#6366f1" : "#1e293b", transition: "all 0.4s" }} />
-              ))}
+              {[1, 2].map(s => <div key={s} style={{ width: s === step ? 30 : 9, height: 9, borderRadius: 5, background: s === step ? "linear-gradient(90deg,#6366f1,#06b6d4)" : s < step ? "#6366f1" : "#1e293b", transition: "all 0.4s" }} />)}
             </div>
 
             {step === 1 && (
@@ -515,22 +351,13 @@ export default function App() {
                 <h2 style={{ textAlign: "center", fontSize: 16, fontWeight: 700, marginBottom: 6, color: "#94a3b8" }}>وش راح تستخدم الجهاز فيه؟</h2>
                 <p style={{ textAlign: "center", fontSize: 11, color: "#475569", marginBottom: 14 }}>اختر حتى 3 استخدامات</p>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 9 }}>
-                  {usageProfiles.map(u => {
-                    const sel = usages.includes(u.id);
-                    return (
-                      <button key={u.id} onClick={() => toggleUsage(u.id)} style={{ background: sel ? "rgba(99,102,241,0.2)" : "rgba(15,23,42,0.8)", border: sel ? "1.5px solid #6366f1" : "1.5px solid rgba(255,255,255,0.06)", borderRadius: 13, padding: "12px 10px", cursor: "pointer", textAlign: "right" }}>
-                        <div style={{ fontSize: 22, marginBottom: 3 }}>{u.icon}</div>
-                        <div style={{ fontWeight: 700, fontSize: 12, color: "#e2e8f0" }}>{u.label}</div>
-                        {sel && <div style={{ fontSize: 9, color: "#6366f1", marginTop: 3, fontWeight: 700 }}>✓ محدد</div>}
-                      </button>
-                    );
-                  })}
+                  {usageProfiles.map(u => { const sel = usages.includes(u.id); return <button key={u.id} onClick={() => toggleUsage(u.id)} style={{ background: sel ? "rgba(99,102,241,0.2)" : "rgba(15,23,42,0.8)", border: sel ? "1.5px solid #6366f1" : "1.5px solid rgba(255,255,255,0.06)", borderRadius: 13, padding: "12px 10px", cursor: "pointer", textAlign: "right" }}>
+                    <div style={{ fontSize: 22, marginBottom: 3 }}>{u.icon}</div>
+                    <div style={{ fontWeight: 700, fontSize: 12, color: "#e2e8f0" }}>{u.label}</div>
+                    {sel && <div style={{ fontSize: 9, color: "#6366f1", marginTop: 3, fontWeight: 700 }}>✓ محدد</div>}
+                  </button>; })}
                 </div>
-                <button
-                  disabled={usages.length === 0}
-                  onClick={() => setStep(2)}
-                  style={{ width: "100%", marginTop: 12, background: usages.length ? "linear-gradient(135deg,#6366f1,#06b6d4)" : "#1e293b", border: "none", borderRadius: 11, padding: "12px", color: usages.length ? "#fff" : "#475569", fontWeight: 700, cursor: usages.length ? "pointer" : "default", fontSize: 13 }}
-                >التالي ←</button>
+                <button disabled={usages.length === 0} onClick={() => setStep(2)} style={{ width: "100%", marginTop: 12, background: usages.length ? "linear-gradient(135deg,#6366f1,#06b6d4)" : "#1e293b", border: "none", borderRadius: 11, padding: "12px", color: usages.length ? "#fff" : "#475569", fontWeight: 700, cursor: usages.length ? "pointer" : "default", fontSize: 13 }}>التالي ←</button>
                 <button onClick={() => { setScreen("home"); setStep(1); setUsages([]); }} style={{ background: "none", border: "none", color: "#475569", cursor: "pointer", fontSize: 12, display: "block", margin: "10px auto 0" }}>← رجوع</button>
               </div>
             )}
@@ -538,42 +365,33 @@ export default function App() {
             {step === 2 && (
               <div>
                 <h2 style={{ textAlign: "center", fontSize: 16, fontWeight: 700, marginBottom: 14, color: "#94a3b8" }}>كم ميزانيتك الإجمالية للتجميعة؟</h2>
-                {fullBuildBudgets.map(b => (
-                  <button key={b.id} onClick={() => { setFbBudget(b.id); setShowResult(true); }} style={{ background: "rgba(15,23,42,0.8)", border: "1.5px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: "13px 18px", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", marginBottom: 8 }}>
-                    <span style={{ fontWeight: 700, fontSize: 13, color: "#e2e8f0" }}>{b.label}</span>
-                    <span style={{ color: "#8b5cf6" }}>←</span>
-                  </button>
-                ))}
+                {fullBuildBudgets.map(b => <button key={b.id} onClick={() => { setFbBudget(b.id); setShowResult(true); }} style={{ background: "rgba(15,23,42,0.8)", border: "1.5px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: "13px 18px", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", marginBottom: 8 }}>
+                  <span style={{ fontWeight: 700, fontSize: 13, color: "#e2e8f0" }}>{b.label}</span>
+                  <span style={{ color: "#8b5cf6" }}>←</span>
+                </button>)}
                 <button onClick={() => setStep(1)} style={{ background: "none", border: "none", color: "#475569", cursor: "pointer", fontSize: 12, display: "block", margin: "8px auto 0" }}>← رجوع</button>
               </div>
             )}
           </div>
         )}
 
-        {/* ── FULL BUILD RESULT ── */}
-        {screen === "full" && showResult && (
+        {/* FULL BUILD RESULT */}
+        {screen === "full" && showResult && fullBuild && (
           <div>
-            {!fullBuild ? (
-              <div style={{ textAlign: "center", padding: "30px 20px", color: "#64748b" }}>
-                <div style={{ fontSize: 40, marginBottom: 12 }}>😕</div>
-                <div style={{ fontSize: 14, fontWeight: 700 }}>ما قدرنا نبني تجميعة بهذه الميزانية</div>
-              </div>
-            ) : (
-              <>
-                <div style={{ textAlign: "center", marginBottom: 16 }}>
-                  <div style={{ fontSize: 13, color: "#06b6d4", fontWeight: 700 }}>🚀 أفضل تجميعة لك</div>
-                  <div style={{ fontSize: 28, fontWeight: 900, color: "#e2e8f0", marginTop: 4 }}>{fullBuild.totalPrice.toLocaleString()} ر.س</div>
-                  <div style={{ fontSize: 11, color: "#64748b" }}>السعر الإجمالي التقريبي</div>
-                </div>
-                <div style={{ background: "linear-gradient(135deg,rgba(99,102,241,0.1),rgba(6,182,212,0.07))", border: "1.5px solid rgba(99,102,241,0.3)", borderRadius: 20, padding: "18px", marginBottom: 14 }}>
-                  {fullBuild.gpu && <MiniCard label="🖥️ كرت الشاشة" name={NVIDIA ${fullBuild.gpu.name}} price={fullBuild.gpu.priceSAR} color={fullBuild.gpu.color} extra={fullBuild.gpu.vram} />}
-                  {fullBuild.cpu && <MiniCard label="⚡ المعالج" name={fullBuild.cpu.name} price={fullBuild.cpu.priceSAR} color={fullBuild.cpu.color} extra={${fullBuild.cpu.brand} · ${fullBuild.cpu.socket}} />}
-                  {fullBuild.mb  && <MiniCard label="🔧 المذربورد" name={fullBuild.mb.name} price={fullBuild.mb.priceSAR} color={fullBuild.mb.color} extra={${fullBuild.mb.brand} · ${fullBuild.mb.chipset}} />}
-                  {fullBuild.ram && <MiniCard label="💾 الرامات" name={fullBuild.ram.name} price={fullBuild.ram.priceSAR} color={fullBuild.ram.color} extra={fullBuild.ram.size} />}
-                  {fullBuild.psu && <MiniCard label="🔌 باور سبلاي" name={fullBuild.psu.name} price={fullBuild.psu.priceSAR} color={fullBuild.psu.color} extra={${fullBuild.psu.watt}W · ${fullBuild.psu.cert}} />}
-                </div>
-              </>
-            )}
+            <div style={{ textAlign: "center", marginBottom: 16 }}>
+              <div style={{ fontSize: 13, color: "#06b6d4", fontWeight: 700 }}>🚀 أفضل تجميعة لك</div>
+              <div style={{ fontSize: 28, fontWeight: 900, color: "#e2e8f0", marginTop: 4 }}>{fullBuild.totalPrice.toLocaleString()} ر.س</div>
+              <div style={{ fontSize: 11, color: "#64748b" }}>السعر الإجمالي التقريبي</div>
+            </div>
+
+            <div style={{ background: "linear-gradient(135deg,rgba(99,102,241,0.1),rgba(6,182,212,0.07))", border: "1.5px solid rgba(99,102,241,0.3)", borderRadius: 20, padding: "18px", marginBottom: 14 }}>
+              {fullBuild.gpu && <MiniCard label="🖥️ كرت الشاشة" name={`NVIDIA ${fullBuild.gpu.name}`} price={fullBuild.gpu.priceSAR} color={fullBuild.gpu.color} extra={fullBuild.gpu.vram} />}
+              {fullBuild.cpu && <MiniCard label="⚡ المعالج" name={fullBuild.cpu.name} price={fullBuild.cpu.priceSAR} color={fullBuild.cpu.color} extra={`${fullBuild.cpu.brand} · ${fullBuild.cpu.socket}`} />}
+              {fullBuild.mb && <MiniCard label="🔧 المذربورد" name={fullBuild.mb.name} price={fullBuild.mb.priceSAR} color={fullBuild.mb.color} extra={`${fullBuild.mb.brand} · ${fullBuild.mb.chipset}`} />}
+              {fullBuild.ram && <MiniCard label="💾 الرامات" name={fullBuild.ram.name} price={fullBuild.ram.priceSAR} color={fullBuild.ram.color} extra={fullBuild.ram.size} />}
+              {fullBuild.psu && <MiniCard label="🔌 باور سبلاي" name={fullBuild.psu.name} price={fullBuild.psu.priceSAR} color={fullBuild.psu.color} extra={`${fullBuild.psu.watt}W · ${fullBuild.psu.cert}`} />}
+            </div>
+
             <div style={{ background: "rgba(15,23,42,0.5)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 11, padding: "10px 14px", fontSize: 10, color: "#475569", textAlign: "center", marginBottom: 12 }}>
               💡 الأسعار تقريبية · لا تشمل الكيس والتبريد والـ SSD · قد تختلف حسب المتجر
             </div>
@@ -581,6 +399,9 @@ export default function App() {
           </div>
         )}
       </div>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800;900&display=swap');*{box-sizing:border-box;}button:active{transform:scale(0.97)}`}</style>
     </div>
   );
 }
+ENDOFFILE
+echo "Done - $(wc -l < /mnt/user-data/outputs/App.js) lines"
