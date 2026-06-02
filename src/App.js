@@ -1,9 +1,3 @@
-wc -c /mnt/user-data/outputs/App.js
-{
-  "returncode" : 0,
-  "stdout" : "26625 \/mnt\/user-data\/outputs\/App.js\n",
-  "stderr" : ""
-}
 cat > /mnt/user-data/outputs/App.js << 'ENDOFFILE'
 import { useState } from "react";
 
@@ -405,8 +399,7 @@ export default function App() {
 }
 ENDOFFILE
 echo "Done - $(wc -l < /mnt/user-data/outputs/App.js) lines"
-{
-  "returncode" : 0,
-  "stdout" : "Done - 398 lines\n",
-  "stderr" : ""
-}
+الناتج
+
+Done - 398 lines
+منتهي
