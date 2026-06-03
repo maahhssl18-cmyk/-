@@ -1,398 +1,399 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
+ 
+// ===================== THEME =====================
+const themes = {
+  dark: {
+    bg: "#080c14",
+    bg2: "#0d1220",
+    bg3: "#111827",
+    card: "rgba(17,24,39,0.9)",
+    border: "rgba(255,255,255,0.07)",
+    text: "#f1f5f9",
+    text2: "#94a3b8",
+    text3: "#475569",
+    accent: "#6366f1",
+    accent2: "#06b6d4",
+    green: "#22c55e",
+    red: "#ef4444",
+    yellow: "#f59e0b",
+  },
+  light: {
+    bg: "#f8fafc",
+    bg2: "#f1f5f9",
+    bg3: "#e2e8f0",
+    card: "rgba(255,255,255,0.95)",
+    border: "rgba(0,0,0,0.08)",
+    text: "#0f172a",
+    text2: "#475569",
+    text3: "#94a3b8",
+    accent: "#6366f1",
+    accent2: "#0891b2",
+    green: "#16a34a",
+    red: "#dc2626",
+    yellow: "#d97706",
+  },
+};
  
 // ===================== DATA =====================
- 
-const usageProfiles = [
-  { id: "casual_gaming", icon: "🎮", label: "ألعاب عادية", desc: "تلعب بدون احتراف" },
-  { id: "pro_gaming", icon: "🏆", label: "ألعاب احترافية", desc: "تنافسي، FPS، أعلى فريم ريت" },
-  { id: "design", icon: "🎨", label: "تصميم وإبداع", desc: "Adobe، Blender، فيديو، ثري دي" },
-  { id: "ai_ml", icon: "🤖", label: "ذكاء اصطناعي / ML", desc: "تدريب نماذج، Python، CUDA" },
-  { id: "study", icon: "📚", label: "دراسة وعمل", desc: "برامج عادية، إنتاجية" },
-  { id: "4k_content", icon: "🎬", label: "محتوى 4K وVR", desc: "تصوير، مونتاج، واقع افتراضي" },
+const allParts = [
+  // GPUs
+  { id: "rtx5060", type: "GPU", brand: "NVIDIA", name: "RTX 5060", model: "GeForce RTX 5060", specs: "8GB GDDR7 · DLSS 4 · 1080p", priceSAR: 1125, lastUpdate: "2025-06-01", tier: 1, score: 72, tag: "اقتصادي" },
+  { id: "rtx5060ti8", type: "GPU", brand: "NVIDIA", name: "RTX 5060 Ti 8GB", model: "GeForce RTX 5060 Ti", specs: "8GB GDDR7 · DLSS 4 · 1080p/1440p", priceSAR: 1425, lastUpdate: "2025-06-01", tier: 2, score: 78, tag: "قيمة جيدة" },
+  { id: "rtx5060ti16", type: "GPU", brand: "NVIDIA", name: "RTX 5060 Ti 16GB", model: "GeForce RTX 5060 Ti", specs: "16GB GDDR7 · DLSS 4 · 1440p", priceSAR: 1612, lastUpdate: "2025-06-01", tier: 2, score: 82, tag: "موصى به" },
+  { id: "rtx5070", type: "GPU", brand: "NVIDIA", name: "RTX 5070", model: "GeForce RTX 5070", specs: "12GB GDDR7 · DLSS 4 · 1440p/4K", priceSAR: 2060, lastUpdate: "2025-06-01", tier: 3, score: 90, tag: "⭐ الأفضل" },
+  { id: "rtx5070ti", type: "GPU", brand: "NVIDIA", name: "RTX 5070 Ti", model: "GeForce RTX 5070 Ti", specs: "16GB GDDR7 · DLSS 4 · 4K", priceSAR: 2810, lastUpdate: "2025-06-01", tier: 3, score: 94, tag: "احترافي" },
+  { id: "rtx5080", type: "GPU", brand: "NVIDIA", name: "RTX 5080", model: "GeForce RTX 5080", specs: "16GB GDDR7 · DLSS 4 · 4K Ultra", priceSAR: 3745, lastUpdate: "2025-06-01", tier: 4, score: 97, tag: "فئة عليا" },
+  { id: "rtx5090", type: "GPU", brand: "NVIDIA", name: "RTX 5090", model: "GeForce RTX 5090", specs: "32GB GDDR7 · DLSS 4 · 8K", priceSAR: 7495, lastUpdate: "2025-06-01", tier: 4, score: 99, tag: "فلاقشيب" },
+  // CPUs
+  { id: "i5_14400f", type: "CPU", brand: "Intel", name: "Core i5-14400F", model: "14400F LGA1700", specs: "10 نواة · 4.7GHz · 65W", priceSAR: 700, lastUpdate: "2025-06-01", tier: 1, score: 70, tag: "اقتصادي" },
+  { id: "i5_14600k", type: "CPU", brand: "Intel", name: "Core i5-14600K", model: "14600K LGA1700", specs: "14 نواة · 5.3GHz · OC", priceSAR: 900, lastUpdate: "2025-06-01", tier: 2, score: 80, tag: "توازن" },
+  { id: "i7_14700k", type: "CPU", brand: "Intel", name: "Core i7-14700K", model: "14700K LGA1700", specs: "20 نواة · 5.6GHz · OC", priceSAR: 1400, lastUpdate: "2025-06-01", tier: 3, score: 88, tag: "محترف" },
+  { id: "i9_14900k", type: "CPU", brand: "Intel", name: "Core i9-14900K", model: "14900K LGA1700", specs: "24 نواة · 6.0GHz · OC", priceSAR: 2100, lastUpdate: "2025-06-01", tier: 4, score: 95, tag: "فلاقشيب" },
+  { id: "r5_9600x", type: "CPU", brand: "AMD", name: "Ryzen 5 9600X", model: "9600X AM5", specs: "6 نواة · 5.4GHz · 65W", priceSAR: 1050, lastUpdate: "2025-06-01", tier: 2, score: 78, tag: "كفاءة" },
+  { id: "r7_9700x", type: "CPU", brand: "AMD", name: "Ryzen 7 9700X", model: "9700X AM5", specs: "8 نواة · 5.5GHz · 65W", priceSAR: 1350, lastUpdate: "2025-06-01", tier: 2, score: 84, tag: "توازن" },
+  { id: "r7_9800x3d", type: "CPU", brand: "AMD", name: "Ryzen 7 9800X3D", model: "9800X3D AM5", specs: "8 نواة · 5.7GHz · 3D Cache", priceSAR: 1575, lastUpdate: "2025-06-01", tier: 3, score: 97, tag: "⭐ ملك الألعاب" },
+  { id: "r9_9950x", type: "CPU", brand: "AMD", name: "Ryzen 9 9950X", model: "9950X AM5", specs: "16 نواة · 5.7GHz · Workstation", priceSAR: 2440, lastUpdate: "2025-06-01", tier: 4, score: 96, tag: "فلاقشيب" },
+  // RAM
+  { id: "kingston_16", type: "RAM", brand: "Kingston", name: "FURY Beast 16GB", model: "DDR5-5600", specs: "16GB · DDR5 · 5600MHz", priceSAR: 280, lastUpdate: "2025-06-01", tier: 1, score: 70, tag: "اقتصادي" },
+  { id: "corsair_32", type: "RAM", brand: "Corsair", name: "Vengeance 32GB", model: "DDR5-6000", specs: "32GB · DDR5 · 6000MHz", priceSAR: 420, lastUpdate: "2025-06-01", tier: 2, score: 85, tag: "⭐ الأفضل" },
+  { id: "gskill_32", type: "RAM", brand: "G.Skill", name: "Trident Z5 32GB", model: "DDR5-6000 RGB", specs: "32GB · DDR5 · 6000MHz · RGB", priceSAR: 490, lastUpdate: "2025-06-01", tier: 2, score: 87, tag: "RGB" },
+  { id: "corsair_64", type: "RAM", brand: "Corsair", name: "Vengeance 64GB", model: "DDR5-6000", specs: "64GB · DDR5 · 6000MHz", priceSAR: 850, lastUpdate: "2025-06-01", tier: 3, score: 90, tag: "محترف" },
+  // PSU
+  { id: "cm_650", type: "PSU", brand: "Cooler Master", name: "MWE Gold 650W", model: "650W 80+ Gold", specs: "650W · 80+ Gold · Semi Modular", priceSAR: 280, lastUpdate: "2025-06-01", tier: 1, score: 72, tag: "اقتصادي" },
+  { id: "corsair_750", type: "PSU", brand: "Corsair", name: "RM750e 750W", model: "750W 80+ Gold", specs: "750W · 80+ Gold · Fully Modular · ATX3.0", priceSAR: 380, lastUpdate: "2025-06-01", tier: 2, score: 85, tag: "موصى به" },
+  { id: "seasonic_850", type: "PSU", brand: "Seasonic", name: "Focus GX 850W", model: "850W 80+ Gold", specs: "850W · 80+ Gold · Fully Modular · 10yr", priceSAR: 530, lastUpdate: "2025-06-01", tier: 3, score: 93, tag: "⭐ الأفضل" },
+  { id: "bequiet_1000", type: "PSU", brand: "be quiet!", name: "Pure Power 13 1000W", model: "1000W 80+ Gold", specs: "1000W · 80+ Gold · Fully Modular · ATX3.1", priceSAR: 650, lastUpdate: "2025-06-01", tier: 4, score: 90, tag: "قوي" },
+  // Motherboards
+  { id: "msi_b760", type: "Motherboard", brand: "MSI", name: "PRO B760M-P DDR5", model: "B760 LGA1700", specs: "B760 · LGA1700 · DDR5 · mATX", priceSAR: 659, lastUpdate: "2025-06-01", tier: 1, score: 72, tag: "اقتصادي" },
+  { id: "asus_z790", type: "Motherboard", brand: "ASUS", name: "TUF Gaming Z790-Plus", model: "Z790 LGA1700", specs: "Z790 · LGA1700 · DDR5 · WiFi · ATX", priceSAR: 1629, lastUpdate: "2025-06-01", tier: 3, score: 88, tag: "Gaming" },
+  { id: "asus_rog_z790", type: "Motherboard", brand: "ASUS", name: "ROG Strix Z790-F WiFi", model: "Z790 ROG LGA1700", specs: "Z790 · LGA1700 · DDR5 · WiFi 6E · ATX", priceSAR: 2149, lastUpdate: "2025-06-01", tier: 4, score: 95, tag: "ROG" },
+  { id: "gigabyte_b850", type: "Motherboard", brand: "Gigabyte", name: "B850 Aorus Elite WiFi7", model: "B850 AM5", specs: "B850 · AM5 · DDR5 · WiFi7 · ATX", priceSAR: 935, lastUpdate: "2025-06-01", tier: 2, score: 85, tag: "⭐ أفضل قيمة" },
+  { id: "asus_x870", type: "Motherboard", brand: "ASUS", name: "PRIME X870-P WiFi", model: "X870 AM5", specs: "X870 · AM5 · DDR5 · WiFi 6E · ATX", priceSAR: 1499, lastUpdate: "2025-06-01", tier: 3, score: 88, tag: "X870" },
 ];
  
-const resolutions = [
-  { id: "1080p", label: "1080p", desc: "Full HD" },
-  { id: "1440p", label: "1440p", desc: "2K - القياسي الأفضل" },
-  { id: "4k", label: "4K", desc: "Ultra HD" },
-];
+const partTypes = ["الكل", "GPU", "CPU", "RAM", "PSU", "Motherboard"];
+const typeIcons = { GPU: "🖥️", CPU: "⚡", RAM: "💾", PSU: "🔌", Motherboard: "🔧" };
+const typeColors = { GPU: "#8b5cf6", CPU: "#ef4444", RAM: "#f59e0b", PSU: "#22c55e", Motherboard: "#3b82f6" };
  
-const budgetRanges = [
-  { id: "b1", label: "أقل من 1,500 ريال", min: 0, max: 1500 },
-  { id: "b2", label: "1,500 – 2,500 ريال", min: 1500, max: 2500 },
-  { id: "b3", label: "2,500 – 4,000 ريال", min: 2500, max: 4000 },
-  { id: "b4", label: "4,000 – 7,000 ريال", min: 4000, max: 7000 },
-  { id: "b5", label: "أكثر من 7,000 ريال", min: 7000, max: 99999 },
-];
- 
-const fullBuildBudgets = [
-  { id: "fb1", label: "3,000 – 5,000 ريال", min: 3000, max: 5000 },
-  { id: "fb2", label: "5,000 – 8,000 ريال", min: 5000, max: 8000 },
-  { id: "fb3", label: "8,000 – 12,000 ريال", min: 8000, max: 12000 },
-  { id: "fb4", label: "12,000 – 18,000 ريال", min: 12000, max: 18000 },
-  { id: "fb5", label: "أكثر من 18,000 ريال", min: 18000, max: 99999 },
-];
- 
-const cpuDatabase = [
-  { id: "i5_14400f", brand: "Intel", name: "Core i5-14400F", socket: "LGA1700", gen: "14th Gen", priceSAR: 700, score: { casual_gaming: 80, pro_gaming: 72, design: 70, ai_ml: 55, study: 88, "4k_content": 68 }, compatibleGPUs: ["rtx5060", "rtx5060ti_8", "rtx5060ti_16", "rtx5070"], pros: ["سعر ممتاز", "أداء جيد للألعاب", "لا يحتاج تبريد مكلف"], cons: ["لا رسوم مدمجة", "لا Overclocking"], tag: "الأفضل للميزانية", color: "#3b82f6", tier: 1 },
-  { id: "i5_14600k", brand: "Intel", name: "Core i5-14600K", socket: "LGA1700", gen: "14th Gen", priceSAR: 900, score: { casual_gaming: 87, pro_gaming: 83, design: 80, ai_ml: 65, study: 85, "4k_content": 78 }, compatibleGPUs: ["rtx5060ti_8", "rtx5060ti_16", "rtx5070", "rtx5070ti"], pros: ["14 نواة", "Overclocking", "أداء ممتاز"], cons: ["يحتاج تبريد جيد"], tag: "توازن ممتاز", color: "#3b82f6", tier: 2 },
-  { id: "i7_14700k", brand: "Intel", name: "Core i7-14700K", socket: "LGA1700", gen: "14th Gen", priceSAR: 1400, score: { casual_gaming: 90, pro_gaming: 88, design: 90, ai_ml: 78, study: 88, "4k_content": 88 }, compatibleGPUs: ["rtx5070", "rtx5070ti", "rtx5080"], pros: ["20 نواة", "ممتاز للتصميم"], cons: ["يحتاج تبريد مكلف"], tag: "للمحترفين", color: "#3b82f6", tier: 3 },
-  { id: "i9_14900k", brand: "Intel", name: "Core i9-14900K", socket: "LGA1700", gen: "14th Gen", priceSAR: 2100, score: { casual_gaming: 88, pro_gaming: 90, design: 96, ai_ml: 88, study: 85, "4k_content": 95 }, compatibleGPUs: ["rtx5070ti", "rtx5080", "rtx5090"], pros: ["24 نواة", "الأقوى من Intel"], cons: ["حرارة مرتفعة جداً"], tag: "فلاقشيب Intel", color: "#3b82f6", tier: 4 },
-  { id: "r5_9600x", brand: "AMD", name: "Ryzen 5 9600X", socket: "AM5", gen: "Ryzen 9000", priceSAR: 1050, score: { casual_gaming: 85, pro_gaming: 82, design: 75, ai_ml: 62, study: 86, "4k_content": 72 }, compatibleGPUs: ["rtx5060ti_8", "rtx5060ti_16", "rtx5070"], pros: ["كفاءة ممتازة", "حرارة منخفضة"], cons: ["6 نوى فقط"], tag: "كفاءة عالية", color: "#ef4444", tier: 2 },
-  { id: "r7_9700x", brand: "AMD", name: "Ryzen 7 9700X", socket: "AM5", gen: "Ryzen 9000", priceSAR: 1350, score: { casual_gaming: 88, pro_gaming: 86, design: 84, ai_ml: 72, study: 88, "4k_content": 82 }, compatibleGPUs: ["rtx5060ti_16", "rtx5070", "rtx5070ti"], pros: ["8 نوى", "65W حرارة منخفضة"], cons: ["ليس X3D"], tag: "توازن AMD", color: "#ef4444", tier: 2 },
-  { id: "r7_9800x3d", brand: "AMD", name: "Ryzen 7 9800X3D", socket: "AM5", gen: "Ryzen 9000", priceSAR: 1575, score: { casual_gaming: 98, pro_gaming: 99, design: 82, ai_ml: 70, study: 85, "4k_content": 80 }, compatibleGPUs: ["rtx5070", "rtx5070ti", "rtx5080", "rtx5090"], pros: ["الأفضل للألعاب عالمياً", "3D V-Cache"], cons: ["غالي نسبياً"], tag: "⭐ ملك الألعاب", color: "#ef4444", tier: 3 },
-  { id: "r9_9950x", brand: "AMD", name: "Ryzen 9 9950X", socket: "AM5", gen: "Ryzen 9000", priceSAR: 2440, score: { casual_gaming: 88, pro_gaming: 86, design: 98, ai_ml: 96, study: 88, "4k_content": 97 }, compatibleGPUs: ["rtx5080", "rtx5090"], pros: ["16 نواة", "الأفضل لـ AI"], cons: ["سعر مرتفع"], tag: "فلاقشيب AMD", color: "#ef4444", tier: 4 },
-];
- 
-const gpuDatabase = [
-  { id: "rtx5060", name: "RTX 5060", vram: "8GB GDDR7", priceSAR: 1125, compatibleCPUs: ["i5_14400f", "i5_14600k"], score: { casual_gaming: 80, study: 90, pro_gaming: 55, design: 50, ai_ml: 40, "4k_content": 30 }, resolutions: ["1080p"], tag: "اقتصادي", color: "#22c55e", tier: 1, pros: ["سعر ممتاز", "DLSS 4"], cons: ["8GB محدودة"] },
-  { id: "rtx5060ti_8", name: "RTX 5060 Ti 8GB", vram: "8GB GDDR7", priceSAR: 1425, compatibleCPUs: ["i5_14400f", "i5_14600k", "r5_9600x"], score: { casual_gaming: 85, study: 88, pro_gaming: 65, design: 58, ai_ml: 45, "4k_content": 40 }, resolutions: ["1080p", "1440p"], tag: "قيمة جيدة", color: "#3b82f6", tier: 1, pros: ["أداء أفضل من 5060"], cons: ["8GB محدودة"] },
-  { id: "rtx5060ti_16", name: "RTX 5060 Ti 16GB", vram: "16GB GDDR7", priceSAR: 1612, compatibleCPUs: ["i5_14400f", "i5_14600k", "r5_9600x", "r7_9700x"], score: { casual_gaming: 88, study: 90, pro_gaming: 70, design: 75, ai_ml: 60, "4k_content": 55 }, resolutions: ["1080p", "1440p"], tag: "موصى به", color: "#f59e0b", tier: 2, pros: ["16GB VRAM ممتازة"], cons: ["أغلى من 8GB"] },
-  { id: "rtx5070", name: "RTX 5070", vram: "12GB GDDR7", priceSAR: 2060, compatibleCPUs: ["i5_14600k", "i7_14700k", "r5_9600x", "r7_9700x", "r7_9800x3d"], score: { casual_gaming: 93, study: 85, pro_gaming: 88, design: 82, ai_ml: 70, "4k_content": 75 }, resolutions: ["1080p", "1440p", "4k"], tag: "⭐ الخيار الذهبي", color: "#8b5cf6", tier: 3, pros: ["1440p مثالي", "DLSS 4"], cons: ["12GB تكفي"] },
-  { id: "rtx5070ti", name: "RTX 5070 Ti", vram: "16GB GDDR7", priceSAR: 2810, compatibleCPUs: ["i7_14700k", "r7_9700x", "r7_9800x3d"], score: { casual_gaming: 90, study: 82, pro_gaming: 96, design: 92, ai_ml: 82, "4k_content": 90 }, resolutions: ["1440p", "4k"], tag: "للمحترفين", color: "#ef4444", tier: 3, pros: ["16GB VRAM", "أعلى FPS"], cons: ["سعر مرتفع"] },
-  { id: "rtx5080", name: "RTX 5080", vram: "16GB GDDR7", priceSAR: 3745, compatibleCPUs: ["i9_14900k", "r7_9800x3d", "r9_9950x"], score: { casual_gaming: 85, study: 75, pro_gaming: 98, design: 97, ai_ml: 92, "4k_content": 97 }, resolutions: ["4k"], tag: "فئة عليا", color: "#f97316", tier: 4, pros: ["4K سلس", "أداء استثنائي"], cons: ["سعر مرتفع"] },
-  { id: "rtx5090", name: "RTX 5090", vram: "32GB GDDR7", priceSAR: 7495, compatibleCPUs: ["i9_14900k", "r9_9950x"], score: { casual_gaming: 80, study: 70, pro_gaming: 99, design: 99, ai_ml: 99, "4k_content": 99 }, resolutions: ["4k"], tag: "الفلاقشيب", color: "#6366f1", tier: 4, pros: ["32GB VRAM", "الأقوى"], cons: ["سعر خرافي"] },
-];
- 
-const psuDatabase = [
-  { id: "coolermaster_650", brand: "Cooler Master", name: "MWE Gold 650W", watt: 650, priceSAR: 280, cert: "80+ Gold", tier: 1, compatibleTiers: [1, 2], pros: ["سعر ممتاز", "80+ Gold"], cons: ["لا يكفي للكروت العالية"], tag: "اقتصادي", color: "#22c55e" },
-  { id: "corsair_750", brand: "Corsair", name: "RM750e 750W", watt: 750, priceSAR: 380, cert: "80+ Gold", tier: 2, compatibleTiers: [1, 2, 3], pros: ["Fully Modular", "هادئ جداً", "ATX 3.0"], cons: ["لا يكفي لـ 5080/5090"], tag: "توازن ممتاز", color: "#3b82f6" },
-  { id: "seasonic_850", brand: "Seasonic", name: "Focus GX-850W", watt: 850, priceSAR: 530, cert: "80+ Gold", tier: 3, compatibleTiers: [2, 3, 4], pros: ["الأموثوقية الأعلى", "ضمان 10 سنوات"], cons: ["سعر أعلى نسبياً"], tag: "⭐ الأفضل جودة", color: "#8b5cf6" },
-  { id: "bequiet_1000", brand: "be quiet!", name: "Pure Power 13 1000W", watt: 1000, priceSAR: 650, cert: "80+ Gold", tier: 4, compatibleTiers: [3, 4], pros: ["1000W كافية لأي تجميعة", "صامت جداً", "ATX 3.1"], cons: ["سعر مرتفع"], tag: "للتجميعات القوية", color: "#ef4444" },
-  { id: "corsair_1000", brand: "Corsair", name: "HX1000 1000W", watt: 1000, priceSAR: 750, cert: "80+ Platinum", tier: 4, compatibleTiers: [3, 4], pros: ["Platinum كفاءة عالية", "ضمان 10 سنوات"], cons: ["سعر مرتفع"], tag: "بلاتينيوم", color: "#f97316" },
-];
- 
-const mbDatabase = [
-  { id: "msi_b760", brand: "MSI", name: "PRO B760M-P DDR5", socket: "LGA1700", chipset: "B760", priceSAR: 659, compatibleCPUs: ["i5_14400f", "i5_14600k"], pros: ["سعر ممتاز", "DDR5"], cons: ["ميزات محدودة"], tag: "اقتصادي Intel", color: "#3b82f6", tier: 1 },
-  { id: "asus_z790", brand: "ASUS", name: "TUF Gaming Z790-Plus", socket: "LGA1700", chipset: "Z790", priceSAR: 1629, compatibleCPUs: ["i5_14600k", "i7_14700k", "i9_14900k"], pros: ["Z790 كامل", "WiFi", "OC ممتاز"], cons: ["سعر أعلى"], tag: "Gaming Intel", color: "#3b82f6", tier: 2 },
-  { id: "asus_rog_z790", brand: "ASUS", name: "ROG Strix Z790-F WiFi", socket: "LGA1700", chipset: "Z790", priceSAR: 2149, compatibleCPUs: ["i7_14700k", "i9_14900k"], pros: ["ROG أعلى جودة", "WiFi 6E", "ممتاز للـ OC"], cons: ["سعر مرتفع"], tag: "ROG فلاقشيب", color: "#3b82f6", tier: 3 },
-  { id: "gigabyte_b850", brand: "Gigabyte", name: "B850 Aorus Elite WiFi7", socket: "AM5", chipset: "B850", priceSAR: 935, compatibleCPUs: ["r5_9600x", "r7_9700x", "r7_9800x3d"], pros: ["WiFi 7", "PCIe 5.0", "DDR5"], cons: ["B850 متوسط"], tag: "⭐ أفضل قيمة AMD", color: "#ef4444", tier: 2 },
-  { id: "asus_x870", brand: "ASUS", name: "PRIME X870-P WiFi", socket: "AM5", chipset: "X870", priceSAR: 1499, compatibleCPUs: ["r5_9600x", "r7_9700x", "r7_9800x3d", "r9_9950x"], pros: ["X870 كامل", "WiFi 6E", "DDR5"], cons: ["سعر أعلى"], tag: "X870 AMD", color: "#ef4444", tier: 3 },
-  { id: "msi_x870e", brand: "MSI", name: "MEG X870E ACE", socket: "AM5", chipset: "X870E", priceSAR: 2199, compatibleCPUs: ["r7_9800x3d", "r9_9950x"], pros: ["X870E فلاقشيب", "أعلى أداء", "PCIe 5.0"], cons: ["سعر مرتفع"], tag: "فلاقشيب AMD", color: "#ef4444", tier: 4 },
-];
- 
-const ramDatabase = [
-  { id: "kingston_16", brand: "Kingston", name: "FURY Beast 16GB DDR5-5600", size: "16GB", speed: "5600MHz", priceSAR: 280, tier: 1, pros: ["سعر ممتاز", "موثوقية عالية"], cons: ["16GB قد لا تكفي للتصميم"], tag: "اقتصادي", color: "#22c55e" },
-  { id: "corsair_32", brand: "Corsair", name: "Vengeance 32GB DDR5-6000", size: "32GB", speed: "6000MHz", priceSAR: 420, tier: 2, pros: ["32GB مثالية للعمل", "DDR5-6000 سرعة ممتازة"], cons: ["سعر أعلى من 16GB"], tag: "⭐ الأفضل للأغلبية", color: "#8b5cf6" },
-  { id: "gskill_32", brand: "G.Skill", name: "Trident Z5 32GB DDR5-6000", size: "32GB", speed: "6000MHz", priceSAR: 490, tier: 2, pros: ["أداء عالٍ", "RGB رائع", "XMP 3.0"], cons: ["أغلى من Corsair"], tag: "RGB ممتاز", color: "#f59e0b" },
-  { id: "corsair_64", brand: "Corsair", name: "Vengeance 64GB DDR5-6000", size: "64GB", speed: "6000MHz", priceSAR: 850, tier: 3, pros: ["64GB للـ AI والتصميم", "EXPO دعم"], cons: ["سعر مرتفع"], tag: "للمحترفين", color: "#ef4444" },
-  { id: "gskill_64", brand: "G.Skill", name: "Flare X5 64GB DDR5-6000", size: "64GB", speed: "6000MHz", priceSAR: 950, tier: 3, pros: ["AMD EXPO", "أداء استثنائي"], cons: ["سعر مرتفع"], tag: "فلاقشيب رام", color: "#6366f1" },
-];
- 
-// ===================== HELPERS =====================
-function getGPURecs(usage, res, budget) {
-  const b = budgetRanges.find(x => x.id === budget);
-  return gpuDatabase.filter(g => g.priceSAR <= b.max * 1.15 && g.priceSAR >= b.min * 0.85 && g.resolutions.includes(res)).sort((a, c) => c.score[usage] - a.score[usage]).slice(0, 3);
-}
-function getCPURecs(usage, budget) {
-  const b = budgetRanges.find(x => x.id === budget);
-  return cpuDatabase.filter(c => c.priceSAR <= b.max * 0.6).sort((a, c) => c.score[usage] - a.score[usage]).slice(0, 3);
-}
-function getPSURecs(budget) {
-  const b = budgetRanges.find(x => x.id === budget);
-  return psuDatabase.filter(p => p.priceSAR <= b.max * 0.3).sort((a, c) => c.watt - a.watt).slice(0, 2);
-}
-function getMBRecs(cpuSocket, budget) {
-  const b = budgetRanges.find(x => x.id === budget);
-  return mbDatabase.filter(m => m.socket === cpuSocket && m.priceSAR <= b.max * 0.4).sort((a, c) => c.priceSAR - a.priceSAR).slice(0, 2);
-}
-function getRAMRecs(budget) {
-  const b = budgetRanges.find(x => x.id === budget);
-  return ramDatabase.filter(r => r.priceSAR <= b.max * 0.2).sort((a, c) => c.priceSAR - a.priceSAR).slice(0, 2);
-}
-function getCompatibleGPUs(cpuId) { return gpuDatabase.filter(g => g.compatibleCPUs.includes(cpuId)); }
-function getCompatibleCPUs(gpuId) { return cpuDatabase.filter(c => c.compatibleGPUs.includes(gpuId)); }
- 
-// Full build recommendation
-function getFullBuild(usage, fbBudget) {
-  const b = fullBuildBudgets.find(x => x.id === fbBudget);
-  const total = b.max;
- 
-  // allocate budget: GPU 40%, CPU 20%, MB 12%, RAM 10%, PSU 8%, rest buffer
-  const gpuMax = total * 0.42;
-  const cpuMax = total * 0.22;
-  const mbMax = total * 0.14;
-  const ramMax = total * 0.12;
-  const psuMax = total * 0.10;
- 
-  const gpu = gpuDatabase.filter(g => g.priceSAR <= gpuMax).sort((a, c) => c.score[usage] - a.score[usage])[0];
-  const cpu = cpuDatabase.filter(c => c.priceSAR <= cpuMax).sort((a, c) => c.score[usage] - a.score[usage])[0];
-  const mb = cpu ? mbDatabase.filter(m => m.socket === cpu.socket && m.priceSAR <= mbMax).sort((a, c) => c.priceSAR - a.priceSAR)[0] : null;
-  const ram = ramDatabase.filter(r => r.priceSAR <= ramMax).sort((a, c) => c.priceSAR - a.priceSAR)[0];
-  const psu = psuDatabase.filter(p => p.priceSAR <= psuMax).sort((a, c) => c.watt - a.watt)[0];
- 
-  const totalPrice = (gpu?.priceSAR || 0) + (cpu?.priceSAR || 0) + (mb?.priceSAR || 0) + (ram?.priceSAR || 0) + (psu?.priceSAR || 0);
-  return { gpu, cpu, mb, ram, psu, totalPrice };
-}
- 
-// ===================== COMPONENTS =====================
-function ScoreBar({ score, color }) {
-  return <div style={{ background: "rgba(255,255,255,0.06)", borderRadius: 8, height: 7, overflow: "hidden", marginTop: 4 }}><div style={{ height: "100%", width: `${score}%`, background: color, borderRadius: 8 }} /></div>;
-}
- 
-function MiniCard({ label, name, price, color, extra }) {
-  return (
-    <div style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${color}33`, borderRadius: 12, padding: "12px 14px", marginBottom: 8 }}>
-      <div style={{ fontSize: 10, color, fontWeight: 700, marginBottom: 2 }}>{label}</div>
-      <div style={{ fontWeight: 800, fontSize: 13, color: "#e2e8f0" }}>{name}</div>
-      {extra && <div style={{ fontSize: 10, color: "#64748b", marginTop: 2 }}>{extra}</div>}
-      <div style={{ fontSize: 13, fontWeight: 800, color, marginTop: 4 }}>~{price?.toLocaleString()} ر.س</div>
-    </div>
-  );
-}
- 
-function CardBig({ item, type, usage, onViewCompat }) {
-  const score = usage ? item.score?.[usage] : null;
-  const color = item.color || "#8b5cf6";
-  return (
-    <div style={{ background: "rgba(15,23,42,0.85)", border: `1.5px solid ${color}55`, borderRadius: 20, padding: "18px", marginBottom: 10 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 8 }}>
-        <div>
-          <div style={{ fontSize: 10, color, fontWeight: 700, marginBottom: 3 }}>{item.brand || "NVIDIA"} · {item.gen || item.vram || item.cert || item.chipset || item.speed}</div>
-          <div style={{ fontSize: 19, fontWeight: 900, color: "#e2e8f0" }}>{type === "gpu" ? "NVIDIA " : ""}{item.name}</div>
-          <div style={{ display: "inline-block", marginTop: 5, background: color + "22", border: `1px solid ${color}44`, borderRadius: 7, padding: "2px 9px", fontSize: 10, color }}>{item.tag}</div>
-        </div>
-        <div style={{ textAlign: "left" }}>
-          <div style={{ fontSize: 20, fontWeight: 900, color: "#e2e8f0" }}>~{item.priceSAR?.toLocaleString()} ر.س</div>
-          {score && <><div style={{ fontSize: 10, color: "#64748b", marginTop: 2 }}>ملاءمة: {score}%</div><ScoreBar score={score} color={color} /></>}
-        </div>
-      </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 12 }}>
-        <div><div style={{ fontSize: 10, color: "#22c55e", fontWeight: 700, marginBottom: 5 }}>✅ مميزات</div>{item.pros?.map((p, i) => <div key={i} style={{ fontSize: 10, color: "#94a3b8", marginBottom: 2 }}>• {p}</div>)}</div>
-        <div><div style={{ fontSize: 10, color: "#ef4444", fontWeight: 700, marginBottom: 5 }}>⚠️ ملاحظات</div>{item.cons?.map((c, i) => <div key={i} style={{ fontSize: 10, color: "#94a3b8", marginBottom: 2 }}>• {c}</div>)}</div>
-      </div>
-      {onViewCompat && <button onClick={() => onViewCompat(item, type)} style={{ marginTop: 12, width: "100%", background: color + "15", border: `1px solid ${color}44`, borderRadius: 9, padding: "8px", color, fontWeight: 700, cursor: "pointer", fontSize: 11 }}>🔗 وش يتوافق مع هذا {type === "gpu" ? "الكرت" : "المعالج"}؟</button>}
-    </div>
-  );
-}
- 
-function CompatModal({ item, type, onClose }) {
-  const list = type === "gpu" ? getCompatibleCPUs(item.id) : getCompatibleGPUs(item.id);
-  return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
-      <div style={{ background: "#0d1117", border: "1.5px solid rgba(99,102,241,0.4)", borderRadius: 22, padding: 22, maxWidth: 480, width: "100%", maxHeight: "80vh", overflowY: "auto" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-          <div style={{ fontWeight: 800, fontSize: 14, color: "#e2e8f0" }}>{type === "gpu" ? `معالجات تشتغل مع ${item.name}` : `كروت تشتغل مع ${item.name}`}</div>
-          <button onClick={onClose} style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer", fontSize: 20 }}>✕</button>
-        </div>
-        {list.length === 0 && <div style={{ color: "#64748b", textAlign: "center", padding: 20 }}>لا يوجد في قاعدة البيانات</div>}
-        {list.map(x => <div key={x.id} style={{ background: "rgba(255,255,255,0.04)", borderRadius: 11, padding: "11px 14px", marginBottom: 8, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div><div style={{ fontWeight: 700, fontSize: 13, color: "#e2e8f0" }}>{type === "gpu" ? "" : "NVIDIA "}{x.name}</div><div style={{ fontSize: 10, color: "#64748b" }}>{x.brand || x.vram} {x.gen || ""}</div></div>
-          <div style={{ fontSize: 13, fontWeight: 800, color: "#06b6d4" }}>~{x.priceSAR?.toLocaleString()} ر.س</div>
-        </div>)}
-        <button onClick={onClose} style={{ width: "100%", background: "linear-gradient(135deg,#6366f1,#06b6d4)", border: "none", borderRadius: 11, padding: "11px", color: "#fff", fontWeight: 700, cursor: "pointer", marginTop: 6 }}>إغلاق</button>
-      </div>
-    </div>
-  );
-}
- 
-// ===================== MAIN =====================
+// ===================== MAIN APP =====================
 export default function App() {
-  const [screen, setScreen] = useState("home"); // home | single | full
-  const [singleType, setSingleType] = useState(null);
-  const [step, setStep] = useState(1);
-  const [usages, setUsages] = useState([]);
-  const [resolution, setResolution] = useState(null);
-  const [budget, setBudget] = useState(null);
-  const [fbBudget, setFbBudget] = useState(null);
-  const [showResult, setShowResult] = useState(false);
-  const [compatItem, setCompatItem] = useState(null);
+  const [isDark, setIsDark] = useState(true);
+  const [page, setPage] = useState("home"); // home | parts | build | compare
+  const [search, setSearch] = useState("");
+  const [filterType, setFilterType] = useState("الكل");
+  const [sortBy, setSortBy] = useState("score");
+  const [buildParts, setBuildParts] = useState({});
+  const [compareItems, setCompareItems] = useState([]);
+  const [compareMode, setCompareMode] = useState(false);
+  const [selectedPart, setSelectedPart] = useState(null);
  
-  const usage = usages[0] || null;
+  const t = isDark ? themes.dark : themes.light;
  
-  const gpuRecs = showResult && (singleType === "gpu") ? getGPURecs(usage, resolution || "1440p", budget) : [];
-  const cpuRecs = showResult && (singleType === "cpu") ? getCPURecs(usage, budget) : [];
-  const psuRecs = showResult && (singleType === "psu") ? getPSURecs(budget) : [];
-  const mbRecs = showResult && (singleType === "mb") ? getMBRecs(usage?.includes("amd") ? "AM5" : "LGA1700", budget) : [];
-  const ramRecs = showResult && (singleType === "ram") ? getRAMRecs(budget) : [];
-  const fullBuild = showResult && screen === "full" && fbBudget ? getFullBuild(usage, fbBudget) : null;
+  const filteredParts = useMemo(() => {
+    return allParts
+      .filter(p => filterType === "الكل" || p.type === filterType)
+      .filter(p => !search || p.name.toLowerCase().includes(search.toLowerCase()) || p.brand.toLowerCase().includes(search.toLowerCase()) || p.specs.toLowerCase().includes(search.toLowerCase()))
+      .sort((a, b) => {
+        if (sortBy === "score") return b.score - a.score;
+        if (sortBy === "price_asc") return a.priceSAR - b.priceSAR;
+        if (sortBy === "price_desc") return b.priceSAR - a.priceSAR;
+        return 0;
+      });
+  }, [search, filterType, sortBy]);
  
-  const reset = () => { setScreen("home"); setSingleType(null); setStep(1); setUsages([]); setResolution(null); setBudget(null); setFbBudget(null); setShowResult(false); setCompatItem(null); };
-  const toggleUsage = (id) => setUsages(prev => prev.includes(id) ? prev.filter(u => u !== id) : prev.length < 3 ? [...prev, id] : prev);
+  const buildTotal = Object.values(buildParts).reduce((sum, p) => sum + p.priceSAR, 0);
+  const buildList = Object.values(buildParts);
  
-  const singleTypes = [
-    { id: "gpu", icon: "🖥️", label: "كرت شاشة" },
-    { id: "cpu", icon: "⚡", label: "معالج" },
-    { id: "psu", icon: "🔌", label: "باور سبلاي" },
-    { id: "mb", icon: "🔧", label: "مذربورد" },
-    { id: "ram", icon: "💾", label: "رامات" },
-  ];
+  const addToBuild = (part) => setBuildParts(prev => ({ ...prev, [part.type]: part }));
+  const removeFromBuild = (type) => setBuildParts(prev => { const n = { ...prev }; delete n[type]; return n; });
+  const toggleCompare = (part) => {
+    setCompareItems(prev => prev.find(p => p.id === part.id) ? prev.filter(p => p.id !== part.id) : prev.length < 2 ? [...prev, part] : [prev[1], part]);
+  };
+ 
+  const shareBuild = () => {
+    const text = buildList.map(p => `${p.name}: ${p.priceSAR} ر.س`).join("\n") + `\nالإجمالي: ${buildTotal.toLocaleString()} ر.س`;
+    navigator.clipboard?.writeText(text);
+    alert("تم نسخ التجميعة! 📋");
+  };
+ 
+  const s = (obj) => ({ ...obj });
+ 
+  // Pie chart data
+  const pieData = buildList.map(p => ({ label: p.type, value: p.priceSAR, color: typeColors[p.type] || "#666" }));
+  const pieTotal = pieData.reduce((s, d) => s + d.value, 0);
  
   return (
-    <div style={{ minHeight: "100vh", background: "linear-gradient(135deg,#0a0a0f,#0d1117,#0a0f1a)", fontFamily: "'Tajawal',sans-serif", direction: "rtl", color: "#e2e8f0", padding: "20px 16px" }}>
-      {compatItem && <CompatModal item={compatItem.item} type={compatItem.type} onClose={() => setCompatItem(null)} />}
-      <div style={{ maxWidth: 700, margin: "0 auto" }}>
+    <div style={{ minHeight: "100vh", background: t.bg, fontFamily: "'Tajawal', sans-serif", direction: "rtl", color: t.text, transition: "all 0.3s" }}>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap');*{box-sizing:border-box;margin:0;padding:0;}::-webkit-scrollbar{width:6px;}::-webkit-scrollbar-track{background:${t.bg};}::-webkit-scrollbar-thumb{background:${t.accent};border-radius:3px;}button{font-family:'Tajawal',sans-serif;}`}</style>
  
-        {/* Header */}
-        <div style={{ textAlign: "center", marginBottom: 24 }}>
-          <h1 style={{ fontSize: "clamp(20px,5vw,34px)", fontWeight: 900, margin: 0, background: "linear-gradient(90deg,#e2e8f0,#06b6d4,#6366f1)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>🖥️ مساعد اختيار المكونات</h1>
-          <p style={{ color: "#64748b", fontSize: 12, marginTop: 4 }}>GPU · CPU · PSU · Motherboard · RAM</p>
+      {/* NAVBAR */}
+      <nav style={{ background: t.bg2, borderBottom: `1px solid ${t.border}`, padding: "0 20px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 56, position: "sticky", top: 0, zIndex: 50, backdropFilter: "blur(10px)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }} onClick={() => setPage("home")}>
+          <div style={{ background: `linear-gradient(135deg,${t.accent},${t.accent2})`, borderRadius: 8, width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>🖥️</div>
+          <span style={{ fontWeight: 900, fontSize: 15, background: `linear-gradient(90deg,${t.accent},${t.accent2})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>PC Builder SA</span>
         </div>
+        <div style={{ display: "flex", gap: 4 }}>
+          {[["home","🏠","الرئيسية"],["parts","📋","القطع"],["build","🔧","تجميعتي"],["compare","⚖️","مقارنة"]].map(([p,ic,lb]) => (
+            <button key={p} onClick={() => setPage(p)} style={{ background: page === p ? `linear-gradient(135deg,${t.accent}22,${t.accent2}11)` : "none", border: page === p ? `1px solid ${t.accent}44` : "1px solid transparent", borderRadius: 8, padding: "5px 10px", color: page === p ? t.accent : t.text2, cursor: "pointer", fontSize: 12, fontWeight: page === p ? 700 : 400, display: "flex", alignItems: "center", gap: 4 }}>
+              <span>{ic}</span><span style={{ display: window.innerWidth > 500 ? "inline" : "none" }}>{lb}</span>
+              {p === "build" && buildList.length > 0 && <span style={{ background: t.accent, color: "#fff", borderRadius: "50%", width: 16, height: 16, fontSize: 10, display: "flex", alignItems: "center", justifyContent: "center" }}>{buildList.length}</span>}
+            </button>
+          ))}
+          <button onClick={() => setIsDark(!isDark)} style={{ background: "none", border: `1px solid ${t.border}`, borderRadius: 8, padding: "5px 10px", color: t.text2, cursor: "pointer", fontSize: 14 }}>{isDark ? "☀️" : "🌙"}</button>
+        </div>
+      </nav>
+ 
+      <div style={{ maxWidth: 900, margin: "0 auto", padding: "20px 16px" }}>
  
         {/* HOME */}
-        {screen === "home" && (
+        {page === "home" && (
           <div>
-            <div style={{ textAlign: "center", fontSize: 15, fontWeight: 700, color: "#94a3b8", marginBottom: 14 }}>وش تبي؟</div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
-              <button onClick={() => setScreen("single")} style={{ background: "rgba(15,23,42,0.8)", border: "1.5px solid rgba(99,102,241,0.3)", borderRadius: 18, padding: "22px 16px", cursor: "pointer", textAlign: "center" }}>
-                <div style={{ fontSize: 32, marginBottom: 8 }}>🔍</div>
-                <div style={{ fontWeight: 800, fontSize: 14, color: "#e2e8f0", marginBottom: 4 }}>اختيار قطعة واحدة</div>
-                <div style={{ fontSize: 11, color: "#64748b" }}>كرت / معالج / رامات / باور / مذربورد</div>
+            <div style={{ textAlign: "center", padding: "40px 0 32px" }}>
+              <div style={{ fontSize: 48, marginBottom: 12 }}>🖥️</div>
+              <h1 style={{ fontSize: "clamp(26px,6vw,42px)", fontWeight: 900, background: `linear-gradient(90deg,${t.text},${t.accent},${t.accent2})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", marginBottom: 8 }}>مساعد تجميع الكمبيوتر</h1>
+              <p style={{ color: t.text2, fontSize: 14 }}>PC Builder Saudi Arabia · أسعار محدّثة · RTX 50 Series · Ryzen 9000</p>
+            </div>
+ 
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 28 }}>
+              <button onClick={() => setPage("parts")} style={{ background: `linear-gradient(135deg,${t.accent}22,${t.accent2}11)`, border: `1.5px solid ${t.accent}44`, borderRadius: 20, padding: "28px 20px", cursor: "pointer", textAlign: "center", transition: "all 0.2s" }}>
+                <div style={{ fontSize: 36, marginBottom: 10 }}>📋</div>
+                <div style={{ fontWeight: 800, fontSize: 16, color: t.text, marginBottom: 6 }}>تصفح القطع</div>
+                <div style={{ fontSize: 12, color: t.text2 }}>GPU · CPU · RAM · PSU · Motherboard</div>
+                <div style={{ marginTop: 14, background: `linear-gradient(135deg,${t.accent},${t.accent2})`, borderRadius: 10, padding: "8px 16px", color: "#fff", fontWeight: 700, fontSize: 13 }}>ابدأ التصفح</div>
               </button>
-              <button onClick={() => setScreen("full")} style={{ background: "linear-gradient(135deg,rgba(99,102,241,0.15),rgba(6,182,212,0.1))", border: "1.5px solid rgba(99,102,241,0.5)", borderRadius: 18, padding: "22px 16px", cursor: "pointer", textAlign: "center" }}>
-                <div style={{ fontSize: 32, marginBottom: 8 }}>🚀</div>
-                <div style={{ fontWeight: 800, fontSize: 14, color: "#e2e8f0", marginBottom: 4 }}>تجميعة كاملة</div>
-                <div style={{ fontSize: 11, color: "#64748b" }}>كل القطع مع بعض بميزانية واحدة</div>
+              <button onClick={() => setPage("build")} style={{ background: `linear-gradient(135deg,#22c55e22,#06b6d411)`, border: `1.5px solid #22c55e44`, borderRadius: 20, padding: "28px 20px", cursor: "pointer", textAlign: "center" }}>
+                <div style={{ fontSize: 36, marginBottom: 10 }}>🚀</div>
+                <div style={{ fontWeight: 800, fontSize: 16, color: t.text, marginBottom: 6 }}>تجميع كمبيوتر</div>
+                <div style={{ fontSize: 12, color: t.text2 }}>اختر قطعك وشوف السعر الكلي</div>
+                <div style={{ marginTop: 14, background: "linear-gradient(135deg,#22c55e,#16a34a)", borderRadius: 10, padding: "8px 16px", color: "#fff", fontWeight: 700, fontSize: 13 }}>ابدأ التجميع</div>
               </button>
             </div>
-          </div>
-        )}
  
-        {/* SINGLE PART */}
-        {screen === "single" && !showResult && (
-          <>
-            <div style={{ display: "flex", justifyContent: "center", gap: 8, marginBottom: 20 }}>
-              {[1, 2, 3].map(s => <div key={s} style={{ width: s === step ? 30 : 9, height: 9, borderRadius: 5, background: s === step ? "linear-gradient(90deg,#6366f1,#06b6d4)" : s < step ? "#6366f1" : "#1e293b", transition: "all 0.4s" }} />)}
+            {/* Quick stats */}
+            <div style={{ background: t.card, border: `1px solid ${t.border}`, borderRadius: 16, padding: "16px 20px", marginBottom: 20 }}>
+              <div style={{ fontSize: 12, color: t.text3, marginBottom: 12, fontWeight: 700 }}>📊 إحصائيات سريعة</div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12 }}>
+                {[["GPU","7",t.accent],["CPU","8","#ef4444"],["RAM","4","#f59e0b"],["PSU","4","#22c55e"]].map(([type,count,color]) => (
+                  <div key={type} style={{ textAlign: "center" }}>
+                    <div style={{ fontSize: 22, fontWeight: 900, color }}>{count}</div>
+                    <div style={{ fontSize: 11, color: t.text3 }}>{type}</div>
+                  </div>
+                ))}
+              </div>
             </div>
  
-            {step === 1 && !singleType && (
-              <div>
-                <div style={{ textAlign: "center", fontSize: 15, fontWeight: 700, color: "#94a3b8", marginBottom: 14 }}>وش القطعة؟</div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 9 }}>
-                  {singleTypes.map(t => <button key={t.id} onClick={() => setSingleType(t.id)} style={{ background: "rgba(15,23,42,0.8)", border: "1.5px solid rgba(255,255,255,0.07)", borderRadius: 14, padding: "16px 10px", cursor: "pointer", textAlign: "center" }}>
-                    <div style={{ fontSize: 24, marginBottom: 6 }}>{t.icon}</div>
-                    <div style={{ fontWeight: 700, fontSize: 12, color: "#e2e8f0" }}>{t.label}</div>
-                  </button>)}
+            {/* Featured */}
+            <div style={{ fontSize: 13, fontWeight: 700, color: t.text2, marginBottom: 10 }}>⭐ أبرز القطع</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {allParts.filter(p => p.tag.includes("⭐")).map(p => (
+                <div key={p.id} onClick={() => { setPage("parts"); setFilterType(p.type); }} style={{ background: t.card, border: `1px solid ${t.border}`, borderRadius: 14, padding: "14px 16px", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <div style={{ fontSize: 22 }}>{typeIcons[p.type]}</div>
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: 13, color: t.text }}>{p.name}</div>
+                      <div style={{ fontSize: 11, color: t.text3 }}>{p.specs}</div>
+                    </div>
+                  </div>
+                  <div style={{ textAlign: "left" }}>
+                    <div style={{ fontWeight: 800, fontSize: 15, color: typeColors[p.type] }}>~{p.priceSAR.toLocaleString()} ر.س</div>
+                    <div style={{ fontSize: 10, color: t.text3 }}>أداء {p.score}%</div>
+                  </div>
                 </div>
-                <button onClick={() => { setScreen("home"); setStep(1); }} style={{ background: "none", border: "none", color: "#475569", cursor: "pointer", fontSize: 12, display: "block", margin: "14px auto 0" }}>← رجوع</button>
-              </div>
-            )}
+              ))}
+            </div>
+          </div>
+        )}
  
-            {step === 1 && singleType && (
-              <div>
-                <h2 style={{ textAlign: "center", fontSize: 16, fontWeight: 700, marginBottom: 6, color: "#94a3b8" }}>وش راح تستخدم الجهاز فيه؟</h2>
-                <p style={{ textAlign: "center", fontSize: 11, color: "#475569", marginBottom: 14 }}>اختر حتى 3 استخدامات</p>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 9 }}>
-                  {usageProfiles.map(u => { const sel = usages.includes(u.id); return <button key={u.id} onClick={() => toggleUsage(u.id)} style={{ background: sel ? "rgba(99,102,241,0.2)" : "rgba(15,23,42,0.8)", border: sel ? "1.5px solid #6366f1" : "1.5px solid rgba(255,255,255,0.06)", borderRadius: 13, padding: "12px 10px", cursor: "pointer", textAlign: "right" }}>
-                    <div style={{ fontSize: 22, marginBottom: 3 }}>{u.icon}</div>
-                    <div style={{ fontWeight: 700, fontSize: 12, color: "#e2e8f0", marginBottom: 1 }}>{u.label}</div>
-                    <div style={{ fontSize: 10, color: "#64748b" }}>{u.desc}</div>
-                    {sel && <div style={{ fontSize: 9, color: "#6366f1", marginTop: 3, fontWeight: 700 }}>✓ محدد</div>}
-                  </button>; })}
+        {/* PARTS PAGE */}
+        {page === "parts" && (
+          <div>
+            <div style={{ marginBottom: 16 }}>
+              <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 14, color: t.text }}>📋 قائمة القطع</h2>
+ 
+              {/* Search */}
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 ابحث بالاسم أو المواصفات..." style={{ width: "100%", background: t.card, border: `1px solid ${t.border}`, borderRadius: 12, padding: "11px 16px", color: t.text, fontSize: 13, marginBottom: 10, outline: "none" }} />
+ 
+              {/* Filters */}
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
+                {partTypes.map(tp => (
+                  <button key={tp} onClick={() => setFilterType(tp)} style={{ background: filterType === tp ? `linear-gradient(135deg,${t.accent},${t.accent2})` : t.card, border: `1px solid ${filterType === tp ? t.accent : t.border}`, borderRadius: 8, padding: "5px 12px", color: filterType === tp ? "#fff" : t.text2, cursor: "pointer", fontSize: 12, fontWeight: filterType === tp ? 700 : 400 }}>
+                    {tp !== "الكل" && typeIcons[tp]} {tp}
+                  </button>
+                ))}
+                <select value={sortBy} onChange={e => setSortBy(e.target.value)} style={{ background: t.card, border: `1px solid ${t.border}`, borderRadius: 8, padding: "5px 10px", color: t.text2, fontSize: 12, cursor: "pointer", marginRight: "auto" }}>
+                  <option value="score">ترتيب: الأداء</option>
+                  <option value="price_asc">السعر: الأقل</option>
+                  <option value="price_desc">السعر: الأعلى</option>
+                </select>
+              </div>
+ 
+              <div style={{ fontSize: 11, color: t.text3, marginBottom: 12 }}>{filteredParts.length} قطعة</div>
+            </div>
+ 
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {filteredParts.map(part => (
+                <div key={part.id} style={{ background: t.card, border: `1px solid ${compareItems.find(p => p.id === part.id) ? t.accent : t.border}`, borderRadius: 16, padding: "14px 16px", transition: "all 0.2s" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+                    <div style={{ display: "flex", gap: 10, alignItems: "flex-start", flex: 1 }}>
+                      <div style={{ fontSize: 24, marginTop: 2 }}>{typeIcons[part.type]}</div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                          <span style={{ fontWeight: 800, fontSize: 14, color: t.text }}>{part.name}</span>
+                          <span style={{ background: typeColors[part.type] + "22", border: `1px solid ${typeColors[part.type]}44`, borderRadius: 6, padding: "1px 7px", fontSize: 10, color: typeColors[part.type] }}>{part.tag}</span>
+                        </div>
+                        <div style={{ fontSize: 11, color: t.text3, marginTop: 2 }}>{part.brand} · {part.model}</div>
+                        <div style={{ fontSize: 11, color: t.text2, marginTop: 3 }}>{part.specs}</div>
+                        {/* Score bar */}
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
+                          <div style={{ flex: 1, background: t.bg3, borderRadius: 4, height: 4, overflow: "hidden" }}>
+                            <div style={{ width: `${part.score}%`, height: "100%", background: `linear-gradient(90deg,${typeColors[part.type]},${t.accent2})`, borderRadius: 4 }} />
+                          </div>
+                          <span style={{ fontSize: 10, color: t.text3 }}>{part.score}%</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div style={{ textAlign: "left", minWidth: 90 }}>
+                      <div style={{ fontWeight: 900, fontSize: 16, color: typeColors[part.type] }}>~{part.priceSAR.toLocaleString()}</div>
+                      <div style={{ fontSize: 10, color: t.text3 }}>ريال سعودي</div>
+                      <div style={{ fontSize: 9, color: t.text3, marginTop: 2 }}>📅 {part.lastUpdate}</div>
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
+                    <button onClick={() => addToBuild(part)} style={{ flex: 1, background: buildParts[part.type]?.id === part.id ? "#22c55e22" : t.bg3, border: `1px solid ${buildParts[part.type]?.id === part.id ? "#22c55e" : t.border}`, borderRadius: 8, padding: "7px", color: buildParts[part.type]?.id === part.id ? "#22c55e" : t.text2, cursor: "pointer", fontSize: 11, fontWeight: 700 }}>
+                      {buildParts[part.type]?.id === part.id ? "✅ في تجميعتك" : "➕ أضف للتجميعة"}
+                    </button>
+                    <button onClick={() => toggleCompare(part)} style={{ background: compareItems.find(p => p.id === part.id) ? t.accent + "22" : t.bg3, border: `1px solid ${compareItems.find(p => p.id === part.id) ? t.accent : t.border}`, borderRadius: 8, padding: "7px 12px", color: compareItems.find(p => p.id === part.id) ? t.accent : t.text3, cursor: "pointer", fontSize: 11 }}>
+                      ⚖️ قارن
+                    </button>
+                  </div>
                 </div>
-                <button disabled={usages.length === 0} onClick={() => setStep(singleType === "gpu" ? 2 : 3)} style={{ width: "100%", marginTop: 12, background: usages.length ? "linear-gradient(135deg,#6366f1,#06b6d4)" : "#1e293b", border: "none", borderRadius: 11, padding: "12px", color: usages.length ? "#fff" : "#475569", fontWeight: 700, cursor: usages.length ? "pointer" : "default", fontSize: 13 }}>التالي ←</button>
-              </div>
-            )}
- 
-            {step === 2 && singleType === "gpu" && (
-              <div>
-                <h2 style={{ textAlign: "center", fontSize: 16, fontWeight: 700, marginBottom: 14, color: "#94a3b8" }}>دقة شاشتك؟</h2>
-                {resolutions.map(r => <button key={r.id} onClick={() => { setResolution(r.id); setStep(3); }} style={{ background: "rgba(15,23,42,0.8)", border: "1.5px solid rgba(255,255,255,0.06)", borderRadius: 13, padding: "16px 18px", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", marginBottom: 9 }}>
-                  <div><div style={{ fontWeight: 800, fontSize: 16, color: "#e2e8f0" }}>{r.label}</div><div style={{ fontSize: 11, color: "#64748b" }}>{r.desc}</div></div>
-                  <div style={{ color: "#06b6d4" }}>←</div>
-                </button>)}
-                <button onClick={() => setStep(1)} style={{ background: "none", border: "none", color: "#475569", cursor: "pointer", fontSize: 12, display: "block", margin: "8px auto 0" }}>← رجوع</button>
-              </div>
-            )}
- 
-            {step === 3 && (
-              <div>
-                <h2 style={{ textAlign: "center", fontSize: 16, fontWeight: 700, marginBottom: 14, color: "#94a3b8" }}>كم ميزانيتك للقطعة؟</h2>
-                {budgetRanges.map(b => <button key={b.id} onClick={() => { setBudget(b.id); setShowResult(true); }} style={{ background: "rgba(15,23,42,0.8)", border: "1.5px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: "13px 18px", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", marginBottom: 8 }}>
-                  <span style={{ fontWeight: 700, fontSize: 13, color: "#e2e8f0" }}>{b.label}</span>
-                  <span style={{ color: "#8b5cf6" }}>←</span>
-                </button>)}
-                <button onClick={() => setStep(singleType === "gpu" ? 2 : 1)} style={{ background: "none", border: "none", color: "#475569", cursor: "pointer", fontSize: 12, display: "block", margin: "8px auto 0" }}>← رجوع</button>
-              </div>
-            )}
-          </>
-        )}
- 
-        {/* SINGLE RESULTS */}
-        {screen === "single" && showResult && (
-          <div>
-            <div style={{ textAlign: "center", fontSize: 12, color: "#64748b", marginBottom: 14 }}>
-              {singleType === "gpu" && <div style={{ color: "#8b5cf6", fontWeight: 700, fontSize: 13 }}>🖥️ كروت الشاشة الموصى بها</div>}
-              {singleType === "cpu" && <div style={{ color: "#ef4444", fontWeight: 700, fontSize: 13 }}>⚡ المعالجات الموصى بها</div>}
-              {singleType === "psu" && <div style={{ color: "#22c55e", fontWeight: 700, fontSize: 13 }}>🔌 باور سبلاي الموصى به</div>}
-              {singleType === "mb" && <div style={{ color: "#3b82f6", fontWeight: 700, fontSize: 13 }}>🔧 المذربورد الموصى به</div>}
-              {singleType === "ram" && <div style={{ color: "#f59e0b", fontWeight: 700, fontSize: 13 }}>💾 الرامات الموصى بها</div>}
+              ))}
             </div>
- 
-            {singleType === "gpu" && gpuRecs.map((g, i) => <div key={g.id}>{i === 0 && <div style={{ fontSize: 10, color: "#06b6d4", fontWeight: 700, marginBottom: 5 }}>✅ الاختيار الأمثل</div>}<CardBig item={g} type="gpu" usage={usage} onViewCompat={(item, type) => setCompatItem({ item, type })} /></div>)}
-            {singleType === "cpu" && cpuRecs.map((c, i) => <div key={c.id}>{i === 0 && <div style={{ fontSize: 10, color: "#06b6d4", fontWeight: 700, marginBottom: 5 }}>✅ الاختيار الأمثل</div>}<CardBig item={c} type="cpu" usage={usage} onViewCompat={(item, type) => setCompatItem({ item, type })} /></div>)}
-            {singleType === "psu" && psuRecs.map((p, i) => <div key={p.id}>{i === 0 && <div style={{ fontSize: 10, color: "#06b6d4", fontWeight: 700, marginBottom: 5 }}>✅ الاختيار الأمثل</div>}<CardBig item={p} type="psu" usage={null} onViewCompat={null} /></div>)}
-            {singleType === "mb" && mbRecs.map((m, i) => <div key={m.id}>{i === 0 && <div style={{ fontSize: 10, color: "#06b6d4", fontWeight: 700, marginBottom: 5 }}>✅ الاختيار الأمثل</div>}<CardBig item={m} type="mb" usage={null} onViewCompat={null} /></div>)}
-            {singleType === "ram" && ramRecs.map((r, i) => <div key={r.id}>{i === 0 && <div style={{ fontSize: 10, color: "#06b6d4", fontWeight: 700, marginBottom: 5 }}>✅ الاختيار الأمثل</div>}<CardBig item={r} type="ram" usage={null} onViewCompat={null} /></div>)}
- 
-            <div style={{ background: "rgba(15,23,42,0.5)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 11, padding: "10px 14px", fontSize: 10, color: "#475569", textAlign: "center", marginBottom: 12 }}>
-              💡 الأسعار تقريبية · قد تختلف حسب المتجر
-            </div>
-            <button onClick={reset} style={{ width: "100%", background: "linear-gradient(135deg,#6366f1,#06b6d4)", border: "none", borderRadius: 13, padding: "13px", color: "#fff", fontWeight: 800, cursor: "pointer", fontSize: 13 }}>🔄 ابدأ من جديد</button>
           </div>
         )}
  
-        {/* FULL BUILD */}
-        {screen === "full" && !showResult && (
+        {/* BUILD PAGE */}
+        {page === "build" && (
           <div>
-            <div style={{ display: "flex", justifyContent: "center", gap: 8, marginBottom: 20 }}>
-              {[1, 2].map(s => <div key={s} style={{ width: s === step ? 30 : 9, height: 9, borderRadius: 5, background: s === step ? "linear-gradient(90deg,#6366f1,#06b6d4)" : s < step ? "#6366f1" : "#1e293b", transition: "all 0.4s" }} />)}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+              <h2 style={{ fontSize: 20, fontWeight: 800, color: t.text }}>🔧 تجميعتي</h2>
+              {buildList.length > 0 && <button onClick={shareBuild} style={{ background: `linear-gradient(135deg,${t.accent},${t.accent2})`, border: "none", borderRadius: 10, padding: "8px 14px", color: "#fff", fontWeight: 700, cursor: "pointer", fontSize: 12 }}>📋 نسخ التجميعة</button>}
             </div>
  
-            {step === 1 && (
-              <div>
-                <h2 style={{ textAlign: "center", fontSize: 16, fontWeight: 700, marginBottom: 6, color: "#94a3b8" }}>وش راح تستخدم الجهاز فيه؟</h2>
-                <p style={{ textAlign: "center", fontSize: 11, color: "#475569", marginBottom: 14 }}>اختر حتى 3 استخدامات</p>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 9 }}>
-                  {usageProfiles.map(u => { const sel = usages.includes(u.id); return <button key={u.id} onClick={() => toggleUsage(u.id)} style={{ background: sel ? "rgba(99,102,241,0.2)" : "rgba(15,23,42,0.8)", border: sel ? "1.5px solid #6366f1" : "1.5px solid rgba(255,255,255,0.06)", borderRadius: 13, padding: "12px 10px", cursor: "pointer", textAlign: "right" }}>
-                    <div style={{ fontSize: 22, marginBottom: 3 }}>{u.icon}</div>
-                    <div style={{ fontWeight: 700, fontSize: 12, color: "#e2e8f0" }}>{u.label}</div>
-                    {sel && <div style={{ fontSize: 9, color: "#6366f1", marginTop: 3, fontWeight: 700 }}>✓ محدد</div>}
-                  </button>; })}
+            {buildList.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "60px 20px", background: t.card, borderRadius: 20, border: `1px solid ${t.border}` }}>
+                <div style={{ fontSize: 48, marginBottom: 12 }}>🔧</div>
+                <div style={{ fontWeight: 700, fontSize: 16, color: t.text, marginBottom: 8 }}>تجميعتك فاضية</div>
+                <div style={{ color: t.text2, fontSize: 13, marginBottom: 20 }}>روح لقائمة القطع وأضف ما تبي</div>
+                <button onClick={() => setPage("parts")} style={{ background: `linear-gradient(135deg,${t.accent},${t.accent2})`, border: "none", borderRadius: 12, padding: "11px 24px", color: "#fff", fontWeight: 700, cursor: "pointer", fontSize: 13 }}>تصفح القطع</button>
+              </div>
+            ) : (
+              <>
+                {buildList.map(part => (
+                  <div key={part.id} style={{ background: t.card, border: `1px solid ${t.border}`, borderRadius: 14, padding: "14px 16px", marginBottom: 8, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                      <div style={{ fontSize: 22 }}>{typeIcons[part.type]}</div>
+                      <div>
+                        <div style={{ fontSize: 10, color: typeColors[part.type], fontWeight: 700 }}>{part.type}</div>
+                        <div style={{ fontWeight: 700, fontSize: 13, color: t.text }}>{part.name}</div>
+                        <div style={{ fontSize: 11, color: t.text3 }}>{part.specs}</div>
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                      <div style={{ fontWeight: 800, fontSize: 15, color: typeColors[part.type] }}>{part.priceSAR.toLocaleString()} ر.س</div>
+                      <button onClick={() => removeFromBuild(part.type)} style={{ background: "#ef444422", border: "1px solid #ef444444", borderRadius: 7, padding: "4px 8px", color: "#ef4444", cursor: "pointer", fontSize: 12 }}>✕</button>
+                    </div>
+                  </div>
+                ))}
+ 
+                {/* Total */}
+                <div style={{ background: `linear-gradient(135deg,${t.accent}22,${t.accent2}11)`, border: `1.5px solid ${t.accent}44`, borderRadius: 16, padding: "18px 20px", marginTop: 12, marginBottom: 16 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                    <span style={{ fontWeight: 700, fontSize: 15, color: t.text }}>💰 السعر الإجمالي</span>
+                    <span style={{ fontWeight: 900, fontSize: 24, color: t.accent }}>~{buildTotal.toLocaleString()} ر.س</span>
+                  </div>
+                  {/* Simple pie */}
+                  {pieData.length > 0 && (
+                    <div>
+                      <div style={{ fontSize: 11, color: t.text3, marginBottom: 8 }}>توزيع الميزانية</div>
+                      {pieData.map(d => (
+                        <div key={d.label} style={{ marginBottom: 6 }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: t.text2, marginBottom: 3 }}>
+                            <span>{typeIcons[d.label]} {d.label}</span>
+                            <span style={{ color: d.color }}>{Math.round(d.value / pieTotal * 100)}% · {d.value.toLocaleString()} ر.س</span>
+                          </div>
+                          <div style={{ background: t.bg3, borderRadius: 4, height: 6, overflow: "hidden" }}>
+                            <div style={{ width: `${d.value / pieTotal * 100}%`, height: "100%", background: d.color, borderRadius: 4 }} />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-                <button disabled={usages.length === 0} onClick={() => setStep(2)} style={{ width: "100%", marginTop: 12, background: usages.length ? "linear-gradient(135deg,#6366f1,#06b6d4)" : "#1e293b", border: "none", borderRadius: 11, padding: "12px", color: usages.length ? "#fff" : "#475569", fontWeight: 700, cursor: usages.length ? "pointer" : "default", fontSize: 13 }}>التالي ←</button>
-                <button onClick={() => { setScreen("home"); setStep(1); setUsages([]); }} style={{ background: "none", border: "none", color: "#475569", cursor: "pointer", fontSize: 12, display: "block", margin: "10px auto 0" }}>← رجوع</button>
-              </div>
-            )}
  
-            {step === 2 && (
-              <div>
-                <h2 style={{ textAlign: "center", fontSize: 16, fontWeight: 700, marginBottom: 14, color: "#94a3b8" }}>كم ميزانيتك الإجمالية للتجميعة؟</h2>
-                {fullBuildBudgets.map(b => <button key={b.id} onClick={() => { setFbBudget(b.id); setShowResult(true); }} style={{ background: "rgba(15,23,42,0.8)", border: "1.5px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: "13px 18px", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", marginBottom: 8 }}>
-                  <span style={{ fontWeight: 700, fontSize: 13, color: "#e2e8f0" }}>{b.label}</span>
-                  <span style={{ color: "#8b5cf6" }}>←</span>
-                </button>)}
-                <button onClick={() => setStep(1)} style={{ background: "none", border: "none", color: "#475569", cursor: "pointer", fontSize: 12, display: "block", margin: "8px auto 0" }}>← رجوع</button>
-              </div>
+                <button onClick={() => setPage("parts")} style={{ width: "100%", background: t.card, border: `1px solid ${t.border}`, borderRadius: 12, padding: "12px", color: t.text2, cursor: "pointer", fontSize: 13, fontWeight: 700 }}>➕ أضف قطعة أخرى</button>
+              </>
             )}
           </div>
         )}
  
-        {/* FULL BUILD RESULT */}
-        {screen === "full" && showResult && fullBuild && (
+        {/* COMPARE PAGE */}
+        {page === "compare" && (
           <div>
-            <div style={{ textAlign: "center", marginBottom: 16 }}>
-              <div style={{ fontSize: 13, color: "#06b6d4", fontWeight: 700 }}>🚀 أفضل تجميعة لك</div>
-              <div style={{ fontSize: 28, fontWeight: 900, color: "#e2e8f0", marginTop: 4 }}>{fullBuild.totalPrice.toLocaleString()} ر.س</div>
-              <div style={{ fontSize: 11, color: "#64748b" }}>السعر الإجمالي التقريبي</div>
-            </div>
+            <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 6, color: t.text }}>⚖️ مقارنة القطع</h2>
+            <p style={{ fontSize: 12, color: t.text3, marginBottom: 16 }}>اختر قطعتين من نفس الفئة للمقارنة — اضغط "قارن" في قائمة القطع</p>
  
-            <div style={{ background: "linear-gradient(135deg,rgba(99,102,241,0.1),rgba(6,182,212,0.07))", border: "1.5px solid rgba(99,102,241,0.3)", borderRadius: 20, padding: "18px", marginBottom: 14 }}>
-              {fullBuild.gpu && <MiniCard label="🖥️ كرت الشاشة" name={`NVIDIA ${fullBuild.gpu.name}`} price={fullBuild.gpu.priceSAR} color={fullBuild.gpu.color} extra={fullBuild.gpu.vram} />}
-              {fullBuild.cpu && <MiniCard label="⚡ المعالج" name={fullBuild.cpu.name} price={fullBuild.cpu.priceSAR} color={fullBuild.cpu.color} extra={`${fullBuild.cpu.brand} · ${fullBuild.cpu.socket}`} />}
-              {fullBuild.mb && <MiniCard label="🔧 المذربورد" name={fullBuild.mb.name} price={fullBuild.mb.priceSAR} color={fullBuild.mb.color} extra={`${fullBuild.mb.brand} · ${fullBuild.mb.chipset}`} />}
-              {fullBuild.ram && <MiniCard label="💾 الرامات" name={fullBuild.ram.name} price={fullBuild.ram.priceSAR} color={fullBuild.ram.color} extra={fullBuild.ram.size} />}
-              {fullBuild.psu && <MiniCard label="🔌 باور سبلاي" name={fullBuild.psu.name} price={fullBuild.psu.priceSAR} color={fullBuild.psu.color} extra={`${fullBuild.psu.watt}W · ${fullBuild.psu.cert}`} />}
-            </div>
+            {compareItems.length < 2 ? (
+              <div style={{ textAlign: "center", padding: "50px 20px", background: t.card, borderRadius: 20, border: `1px solid ${t.border}` }}>
+                <div style={{ fontSize: 48, marginBottom: 12 }}>⚖️</div>
+                <div style={{ fontWeight: 700, fontSize: 15, color: t.text, marginBottom: 8 }}>اختر {2 - compareItems.length} قطعة للمقارنة</div>
+                <div style={{ color: t.text2, fontSize: 12, marginBottom: 20 }}>روح لقائمة القطع واضغط "قارن" على قطعتين</div>
+                <button onClick={() => setPage("parts")} style={{ background: `linear-gradient(135deg,${t.accent},${t.accent2})`, border: "none", borderRadius: 12, padding: "11px 24px", color: "#fff", fontWeight: 700, cursor: "pointer", fontSize: 13 }}>تصفح القطع</button>
+                {compareItems.length === 1 && <div style={{ marginTop: 14, background: t.bg2, borderRadius: 12, padding: "12px", fontSize: 13, color: t.text2 }}>✅ تم اختيار: <strong style={{ color: t.text }}>{compareItems[0].name}</strong></div>}
+              </div>
+            ) : (
+              <div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
+                  {compareItems.map((part, i) => (
+                    <div key={part.id} style={{ background: t.card, border: `1.5px solid ${typeColors[part.type]}55`, borderRadius: 16, padding: "16px" }}>
+                      <div style={{ fontSize: 10, color: typeColors[part.type], fontWeight: 700, marginBottom: 4 }}>{i === 0 ? "القطعة الأولى" : "القطعة الثانية"}</div>
+                      <div style={{ fontSize: 28, marginBottom: 6 }}>{typeIcons[part.type]}</div>
+                      <div style={{ fontWeight: 800, fontSize: 14, color: t.text, marginBottom: 4 }}>{part.name}</div>
+                      <div style={{ fontSize: 11, color: t.text3, marginBottom: 8 }}>{part.specs}</div>
+                      <div style={{ fontWeight: 900, fontSize: 20, color: typeColors[part.type] }}>{part.priceSAR.toLocaleString()} ر.س</div>
+                    </div>
+                  ))}
+                </div>
  
-            <div style={{ background: "rgba(15,23,42,0.5)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 11, padding: "10px 14px", fontSize: 10, color: "#475569", textAlign: "center", marginBottom: 12 }}>
-              💡 الأسعار تقريبية · لا تشمل الكيس والتبريد والـ SSD · قد تختلف حسب المتجر
-            </div>
-            <button onClick={reset} style={{ width: "100%", background: "linear-gradient(135deg,#6366f1,#06b6d4)", border: "none", borderRadius: 13, padding: "13px", color: "#fff", fontWeight: 800, cursor: "pointer", fontSize: 13 }}>🔄 ابدأ من جديد</button>
+                {/* Comparison table */}
+                <div style={{ background: t.card, border: `1px solid ${t.border}`, borderRadius: 16, overflow: "hidden" }}>
+                  {[
+                    ["الاسم", compareItems[0].name, compareItems[1].name, null],
+                    ["الشركة", compareItems[0].brand, compareItems[1].brand, null],
+                    ["النوع", compareItems[0].type, compareItems[1].type, null],
+                    ["المواصفات", compareItems[0].specs, compareItems[1].specs, null],
+                    ["السعر", `${compareItems[0].priceSAR.toLocaleString()} ر.س`, `${compareItems[1].priceSAR.toLocaleString()} ر.س`, "price"],
+                    ["الأداء", `${compareItems[0].score}%`, `${compareItems[1].score}%`, "score"],
+                  ].map(([label, v1, v2, compare], i) => (
+                    <div key={label} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", borderBottom: `1px solid ${t.border}`, background: i % 2 === 0 ? t.bg2 + "44" : "transparent" }}>
+                      <div style={{ padding: "10px 14px", fontSize: 11, color: t.text3, fontWeight: 700 }}>{label}</div>
+                      <div style={{ padding: "10px 14px", fontSize: 11, color: compare === "price" ? (compareItems[0].priceSAR <= compareItems[1].priceSAR ? t.green : t.red) : compare === "score" ? (compareItems[0].score >= compareItems[1].score ? t.green : t.red) : t.text, fontWeight: 700 }}>{v1}</div>
+                      <div style={{ padding: "10px 14px", fontSize: 11, color: compare === "price" ? (compareItems[1].priceSAR <= compareItems[0].priceSAR ? t.green : t.red) : compare === "score" ? (compareItems[1].score >= compareItems[0].score ? t.green : t.red) : t.text, fontWeight: 700 }}>{v2}</div>
+                    </div>
+                  ))}
+                </div>
+ 
+                <button onClick={() => setCompareItems([])} style={{ width: "100%", marginTop: 12, background: t.card, border: `1px solid ${t.border}`, borderRadius: 12, padding: "11px", color: t.text2, cursor: "pointer", fontSize: 12, fontWeight: 700 }}>🔄 مقارنة جديدة</button>
+              </div>
+            )}
           </div>
         )}
+ 
+        {/* Footer */}
+        <div style={{ textAlign: "center", padding: "24px 0 8px", fontSize: 11, color: t.text3 }}>
+          💡 الأسعار تقريبية بالريال السعودي · آخر تحديث: يونيو 2025
+        </div>
       </div>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800;900&display=swap');*{box-sizing:border-box;}button:active{transform:scale(0.97)}`}</style>
     </div>
   );
 }
