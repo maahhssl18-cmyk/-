@@ -1,3 +1,5 @@
+سحق
+
 cat > /mnt/user-data/outputs/App.js << 'ENDOFFILE'
 import { useState, useMemo } from "react";
 
@@ -528,3 +530,6 @@ export default function App() {
 }
 ENDOFFILE
 echo "Done - $(wc -l < /mnt/user-data/outputs/App.js) lines"
+الناتج
+
+Done - 527 lines
