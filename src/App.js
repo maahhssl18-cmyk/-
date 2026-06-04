@@ -1,8 +1,5 @@
-سحق
-
-cat > /mnt/user-data/outputs/App.js << 'ENDOFFILE'
 import { useState, useMemo } from "react";
-
+ 
 const C = {
   bg: "#030608",
   bg2: "#070d12",
@@ -21,7 +18,7 @@ const C = {
   text3: "#2d5a4a",
   glow: "0 0 30px rgba(0,255,150,0.2)",
 };
-
+ 
 const DT = {
   bg: "#f8fafc", bg2: "#f1f5f9", bg3: "#e2e8f0",
   glass: "rgba(255,255,255,0.85)", glassBorder: "rgba(0,150,100,0.2)",
@@ -31,10 +28,10 @@ const DT = {
   white: "#0f172a", text2: "#475569", text3: "#94a3b8",
   glow: "0 0 30px rgba(5,150,105,0.15)",
 };
-
+ 
 const typeColors = { GPU:"#a855f7", CPU:"#0ea5e9", RAM:"#00ff96", PSU:"#fbbf24", Motherboard:"#f97316", SSD:"#06b6d4", Cooler:"#ec4899", Case:"#64748b" };
 const typeIcons = { GPU:"🎮", CPU:"⚡", RAM:"💾", PSU:"🔌", Motherboard:"🔧", SSD:"💿", Cooler:"❄️", Case:"📦" };
-
+ 
 const partsData = [
   // GPU - RTX 50
   { id:"rtx5060", type:"GPU", series:"RTX 50 Series", brand:"NVIDIA", name:"RTX 5060", specs:"8GB GDDR7 · DLSS 4 · 1080p", priceSAR:1125, watt:115, score:72, tag:"Entry" },
@@ -99,7 +96,7 @@ const partsData = [
   { id:"case_corsair", type:"Case", series:"Mid Tower", brand:"Corsair", name:"4000D Airflow", specs:"Mid Tower · ATX · 3 Fans Included", priceSAR:350, watt:0, score:82, tag:"Value" },
   { id:"case_fractal", type:"Case", series:"Mid Tower", brand:"Fractal", name:"North Charcoal", specs:"Mid Tower · ATX · Wood Panel · Silent", priceSAR:500, watt:0, score:88, tag:"Design" },
 ];
-
+ 
 const buildPresets = {
   gaming: { label:"🎮 ألعاب", gpu:"rtx5070", cpu:"r7_9800x3d", ram:"ram_32_corsair", mb:"mb_b850", ssd:"ssd_samsung_1tb", psu:"psu_750g", cooler:"cool_deepcool240", case:"case_nzxt" },
   pro: { label:"🏆 احترافي", gpu:"rtx5080", cpu:"r7_9800x3d", ram:"ram_32_gskill", mb:"mb_b850", ssd:"ssd_wd_2tb", psu:"psu_850g", cooler:"cool_corsair360", case:"case_lianli" },
@@ -107,12 +104,12 @@ const buildPresets = {
   study: { label:"📚 دراسة", gpu:"rtx5060ti16", cpu:"r5_9600x", ram:"ram_16_ddr5", mb:"mb_b850", ssd:"ssd_kv2_1tb", psu:"psu_650g", cooler:"cool_deepcool240", case:"case_corsair" },
   budget: { label:"💰 اقتصادي", gpu:"rtx4060", cpu:"i5_14400f", ram:"ram_16_ddr4", mb:"mb_b760", ssd:"ssd_kv2_1tb", psu:"psu_650g", cooler:"cool_deepcool240", case:"case_corsair" },
 };
-
+ 
 function getPart(id) { return partsData.find(p => p.id === id); }
 function calcWatt(build) { return Object.values(build).reduce((s, id) => s + (getPart(id)?.watt || 0), 0) + 80; }
 function calcPrice(build) { return Object.values(build).reduce((s, id) => s + (getPart(id)?.priceSAR || 0), 0); }
 function recommendPSU(w) { return w <= 450 ? "650W Gold" : w <= 600 ? "750W Gold" : w <= 800 ? "1000W Gold" : "1200W Platinum"; }
-
+ 
 function ScoreRing({ score, color, size = 48 }) {
   const r = size / 2 - 5;
   const circ = 2 * Math.PI * r;
@@ -125,7 +122,7 @@ function ScoreRing({ score, color, size = 48 }) {
     </svg>
   );
 }
-
+ 
 export default function App() {
   const [dark, setDark] = useState(true);
   const [page, setPage] = useState("home");
@@ -135,12 +132,12 @@ export default function App() {
   const [filterSeries, setFilterSeries] = useState(null);
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState("score");
-
+ 
   const T = dark ? C : DT;
-
+ 
   const types = ["GPU","CPU","RAM","PSU","Motherboard","SSD","Cooler","Case"];
   const seriesList = useMemo(() => [...new Set(partsData.filter(p => p.type === filterType).map(p => p.series))], [filterType]);
-
+ 
   const filtered = useMemo(() => partsData
     .filter(p => p.type === filterType)
     .filter(p => !filterSeries || p.series === filterSeries)
@@ -148,15 +145,15 @@ export default function App() {
     .sort((a,b) => sort === "score" ? b.score - a.score : sort === "asc" ? a.priceSAR - b.priceSAR : b.priceSAR - a.priceSAR),
     [filterType, filterSeries, search, sort]
   );
-
+ 
   const buildList = Object.values(build).map(id => getPart(id)).filter(Boolean);
   const total = buildList.reduce((s,p) => s + p.priceSAR, 0);
   const watt = buildList.reduce((s,p) => s + (p.watt||0), 0) + 80;
-
+ 
   const addToBuild = p => setBuild(prev => ({...prev, [p.type]: p.id}));
   const removeFromBuild = type => setBuild(prev => { const n={...prev}; delete n[type]; return n; });
   const toggleCompare = p => setCompare(prev => prev.find(x=>x.id===p.id) ? prev.filter(x=>x.id!==p.id) : prev.length < 2 ? [...prev,p] : [prev[1],p]);
-
+ 
   const navItems = [
     ["home","🏠","الرئيسية"],
     ["parts","📋","القطع"],
@@ -166,9 +163,9 @@ export default function App() {
     ["compare","⚖️","مقارنة"],
     ["smart","🤖","ذكي"],
   ];
-
+ 
   const glass = { background: T.glass, backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", border: `1px solid ${T.glassBorder}`, borderRadius: 16 };
-
+ 
   return (
     <div style={{ minHeight: "100vh", background: T.bg, color: T.white, fontFamily: "'Tajawal', sans-serif", direction: "rtl", transition: "background 0.3s, color 0.3s" }}>
       <style>{`
@@ -180,14 +177,14 @@ export default function App() {
         input { font-family: 'Tajawal', sans-serif; }
         .price { direction: ltr; display: inline-block; font-variant-numeric: tabular-nums; }
       `}</style>
-
+ 
       {/* Background effects */}
       <div style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0 }}>
         <div style={{ position: "absolute", top: -200, right: -200, width: 500, height: 500, background: `radial-gradient(circle, ${T.neon}08 0%, transparent 70%)`, borderRadius: "50%" }} />
         <div style={{ position: "absolute", bottom: -200, left: -200, width: 400, height: 400, background: `radial-gradient(circle, ${T.blue}08 0%, transparent 70%)`, borderRadius: "50%" }} />
         {dark && <div style={{ position: "absolute", inset: 0, backgroundImage: `linear-gradient(${T.neon}04 1px, transparent 1px), linear-gradient(90deg, ${T.neon}04 1px, transparent 1px)`, backgroundSize: "50px 50px" }} />}
       </div>
-
+ 
       {/* NAVBAR */}
       <nav style={{ ...glass, borderRadius: 0, borderLeft: "none", borderRight: "none", borderTop: "none", position: "sticky", top: 0, zIndex: 100, padding: "0 20px" }}>
         <div style={{ maxWidth: 960, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", height: 56 }}>
@@ -207,9 +204,9 @@ export default function App() {
           </div>
         </div>
       </nav>
-
+ 
       <div style={{ maxWidth: 960, margin: "0 auto", padding: "24px 16px", position: "relative", zIndex: 1 }}>
-
+ 
         {/* HOME */}
         {page === "home" && (
           <div>
@@ -222,7 +219,7 @@ export default function App() {
               <p style={{ color: T.text2, fontSize: 14, marginBottom: 28 }}>دليلك الكامل لتجميع PC بكل احترافية</p>
               <button onClick={() => setPage("build")} style={{ background: `linear-gradient(135deg, ${T.neon}, ${T.blue})`, border: "none", borderRadius: 14, padding: "13px 36px", color: "#000", fontWeight: 900, fontSize: 15, cursor: "pointer", boxShadow: T.glow }}>🚀 ابدأ التجميع</button>
             </div>
-
+ 
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10, marginBottom: 24 }}>
               {[["📋","تصفح القطع","parts",T.neon],["⚖️","قارن القطع","compare",T.purple],["🤖","اقتراح ذكي","smart",T.blue],["🔗","فحص التوافق","compat",T.yellow],["⚡","حساب الطاقة","power",T.red],["🔧","تجميعتي","build","#ec4899"]].map(([ic,lb,pg,cl]) => (
                 <div key={pg} onClick={() => setPage(pg)} style={{ ...glass, padding: "18px 14px", textAlign: "center", cursor: "pointer", transition: "all 0.2s" }}
@@ -233,7 +230,7 @@ export default function App() {
                 </div>
               ))}
             </div>
-
+ 
             <div style={{ fontSize: 11, color: T.text3, fontWeight: 700, letterSpacing: 2, marginBottom: 10 }}>⭐ FEATURED</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
               {partsData.filter(p => p.tag.includes("⭐")).slice(0,5).map(p => (
@@ -254,12 +251,12 @@ export default function App() {
             </div>
           </div>
         )}
-
+ 
         {/* PARTS PAGE */}
         {page === "parts" && (
           <div>
             <h2 style={{ fontSize: 20, fontWeight: 800, color: T.white, marginBottom: 14 }}>📋 قطع الكمبيوتر</h2>
-
+ 
             {/* Type tabs */}
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
               {types.map(t => (
@@ -268,7 +265,7 @@ export default function App() {
                 </button>
               ))}
             </div>
-
+ 
             {/* Series tabs */}
             <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: 12, paddingBottom: 12, borderBottom: `1px solid ${T.glassBorder}` }}>
               <button onClick={() => setFilterSeries(null)} style={{ background: !filterSeries ? `${T.neon}22` : "none", border: `1px solid ${!filterSeries ? T.neon+"44" : T.glassBorder}`, borderRadius: 7, padding: "4px 10px", color: !filterSeries ? T.neon : T.text3, cursor: "pointer", fontSize: 11, fontWeight: !filterSeries ? 700 : 400 }}>الكل</button>
@@ -281,11 +278,11 @@ export default function App() {
                 <option value="desc">السعر ↓</option>
               </select>
             </div>
-
+ 
             {/* Search */}
             <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 ابحث..." style={{ width: "100%", background: T.bg3, border: `1px solid ${T.glassBorder}`, borderRadius: 10, padding: "9px 13px", color: T.white, fontSize: 13, outline: "none", marginBottom: 12 }} />
             <div style={{ fontSize: 10, color: T.text3, marginBottom: 10 }}>{filtered.length} قطعة في {filterSeries || filterType}</div>
-
+ 
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(270px,1fr))", gap: 10 }}>
               {filtered.map(part => {
                 const color = typeColors[part.type];
@@ -325,7 +322,7 @@ export default function App() {
             </div>
           </div>
         )}
-
+ 
         {/* BUILD PAGE */}
         {page === "build" && (
           <div>
@@ -333,13 +330,13 @@ export default function App() {
               <h2 style={{ fontSize: 20, fontWeight: 800, color: T.white }}>🔧 تجميعتي</h2>
               {buildList.length > 0 && <button onClick={() => { const txt = buildList.map(p=>`${p.type}: ${p.name} — ${p.priceSAR.toLocaleString()} ر.س`).join("\n")+`\n\nالإجمالي: ${total.toLocaleString()} ر.س`; navigator.clipboard?.writeText(txt); alert("✅ تم نسخ التجميعة!"); }} style={{ background: `linear-gradient(135deg,${T.neon},${T.blue})`, border:"none", borderRadius:9, padding:"7px 14px", color:"#000", fontWeight:700, cursor:"pointer", fontSize:11 }}>📋 نسخ</button>}
             </div>
-
+ 
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 14 }}>
               {Object.entries(buildPresets).map(([k,v]) => (
                 <button key={k} onClick={() => { const b={}; Object.entries(v).forEach(([key,id])=>{ if(key!=="label"){ const p=getPart(id); if(p) b[p.type]=p.id; }}); setBuild(b); }} style={{ background: T.bg3, border:`1px solid ${T.glassBorder}`, borderRadius:8, padding:"5px 11px", color:T.text2, cursor:"pointer", fontSize:11 }}>{v.label}</button>
               ))}
             </div>
-
+ 
             <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 16 }}>
               {types.map(type => {
                 const part = build[type] ? getPart(build[type]) : null;
@@ -362,7 +359,7 @@ export default function App() {
                 );
               })}
             </div>
-
+ 
             {buildList.length > 0 && (
               <div style={{ ...glass, padding: "18px 20px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
@@ -395,7 +392,7 @@ export default function App() {
             )}
           </div>
         )}
-
+ 
         {/* COMPAT */}
         {page === "compat" && (
           <div>
@@ -426,7 +423,7 @@ export default function App() {
             )}
           </div>
         )}
-
+ 
         {/* POWER */}
         {page === "power" && (
           <div>
@@ -451,7 +448,7 @@ export default function App() {
             </div>
           </div>
         )}
-
+ 
         {/* COMPARE */}
         {page === "compare" && (
           <div>
@@ -492,7 +489,7 @@ export default function App() {
             )}
           </div>
         )}
-
+ 
         {/* SMART */}
         {page === "smart" && (
           <div>
@@ -522,14 +519,9 @@ export default function App() {
             })()}
           </div>
         )}
-
+ 
         <div style={{ textAlign:"center", padding:"28px 0 8px", fontSize:10, color:T.text3, letterSpacing:1 }}>PC BUILDER SA · أسعار تقريبية · 2025</div>
       </div>
     </div>
   );
 }
-ENDOFFILE
-echo "Done - $(wc -l < /mnt/user-data/outputs/App.js) lines"
-الناتج
-
-Done - 527 lines
