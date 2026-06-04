@@ -127,7 +127,7 @@ function PartCard({ part, inBuild, onAdd, onCompare, isCompared }) {
         </div>
         <div style={{ textAlign: "right" }}>
           <ScoreRing score={part.score} color={color} size={44} />
-          <div style={{ fontWeight: 900, fontSize: 15, color, marginTop: 4 }}>{part.priceSAR.toLocaleString()}</div>
+          <div style={{ fontWeight: 900, fontSize: 15, color, direction: "ltr", textAlign: "right", marginTop: 4 }}>{part.priceSAR.toLocaleString()}</div>
           <div style={{ fontSize: 9, color: C.text3 }}>ريال</div>
         </div>
       </div>
@@ -205,7 +205,7 @@ function HomePage({ setPage }) {
                 <div style={{ fontSize: 10, color: C.text3 }}>{p.specs}</div>
               </div>
             </div>
-            <div style={{ fontWeight: 900, fontSize: 14, color: typeColors[p.type] }}>{p.priceSAR.toLocaleString()} ر.س</div>
+            <div style={{ fontWeight: 900, fontSize: 14, color: typeColors[p.type] }}>{p.priceSAR.toLocaleString()}</span> <span style={{color:"inherit"}}>ر.س</span></div>
           </div>
         ))}
       </div>
@@ -424,7 +424,7 @@ function ComparePage({ compare, setCompare, setPage }) {
                 <div style={{ fontWeight: 800, fontSize: 13, color: C.text, marginBottom: 4 }}>{p.name}</div>
                 <div style={{ fontSize: 10, color: C.text3, marginBottom: 8 }}>{p.specs}</div>
                 <ScoreRing score={p.score} color={typeColors[p.type]} size={52} />
-                <div style={{ fontWeight: 900, fontSize: 18, color: typeColors[p.type], marginTop: 6 }}>{p.priceSAR.toLocaleString()} ر.س</div>
+                <div style={{ fontWeight: 900, fontSize: 18, color: typeColors[p.type], direction: "ltr", textAlign: "right", marginTop: 6 }}>{p.priceSAR.toLocaleString()}</span> <span style={{color:"inherit"}}>ر.س</span></div>
               </div>
             ))}
           </div>
@@ -466,7 +466,7 @@ function SmartPage({ build, setBuild }) {
         <div style={{ fontSize: 11, color: C.text3, fontWeight: 700, marginBottom: 8 }}>💰 الميزانية</div>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <input type="range" min={3000} max={20000} step={500} value={budget} onChange={e => setBudget(+e.target.value)} style={{ flex: 1, accentColor: C.accent }} />
-          <div style={{ fontWeight: 900, fontSize: 18, color: C.accent, minWidth: 100, textAlign: "right" }}>{budget.toLocaleString()} ر.س</div>
+          <div style={{ fontWeight: 900, fontSize: 18, color: C.accent, minWidth: 100, textAlign: "right" }}>{budget.toLocaleString()}</span> ر.س</div>
         </div>
       </div>
       <div style={{ marginBottom: 20 }}>
@@ -496,9 +496,12 @@ export default function App() {
   const navLabels = { home:"الرئيسية", parts:"القطع", build:"تجميعتي", compat:"التوافق", power:"الطاقة", compare:"مقارنة", smart:"ذكي" };
  
   return (
-    <div style={{ minHeight: "100vh", background: C.bg, fontFamily: "'Syne', 'Tajawal', sans-serif", direction: "rtl", color: C.text }}>
+    <div style={{ minHeight: "100vh", background: C.bg, fontFamily: "'Syne', 'Tajawal', sans-serif", direction: "rtl", unicodeBidi: 'embed', color: C.text }}>
       <style>{`
+        .num { direction: ltr; display: inline-block; }
+ 
         @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=Tajawal:wght@400;500;700;800;900&display=swap');
+        .price-tag { direction: ltr !important; display: inline-flex; align-items: center; gap: 4px; }
         *{box-sizing:border-box;margin:0;padding:0;}
         ::-webkit-scrollbar{width:5px;}
         ::-webkit-scrollbar-track{background:${C.bg};}
@@ -506,6 +509,9 @@ export default function App() {
         body{background:${C.bg};}
         input[type=range]{height:4px;border-radius:2px;}
         button{font-family:'Tajawal',sans-serif;}
+        * { font-variant-numeric: normal; }
+        [dir="rtl"] .ltr-num, .ltr-num { direction: ltr !important; unicode-bidi: bidi-override !important; display: inline-block; }
+ 
       `}</style>
  
       {/* Grid background */}
