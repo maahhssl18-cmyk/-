@@ -525,6 +525,3 @@ export default function App() {
       </div>
     </div>
   );
-}
-ENDOFFILE
-echo "Done - $(wc -l < /mnt/user-data/outputs/App.js) lines"
