@@ -1,4 +1,3 @@
-· جافا سكريبت
 import { useState, useMemo } from "react";
  
 // ===================== THEME =====================
