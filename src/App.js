@@ -1,5 +1,4 @@
 import { useState, useMemo } from "react";
-import { Analytics } from '@vercel/analytics/react';
  
 const TRACKING_ID = "cuttingguide-21";
 function amazonLink(url) { return url + (url.includes('?') ? '&' : '?') + `tag=${TRACKING_ID}`; }
@@ -580,7 +579,6 @@ export default function App() {
         {page==="compare" && <ComparePage />}
       </div>
  
-      <Analytics />
     </div>
   );
 }
