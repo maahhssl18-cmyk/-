@@ -16,8 +16,8 @@ const typeIcons = { GPU:"🎮", CPU:"⚡", RAM:"💾", PSU:"🔌", Motherboard:"
 // ===================== DATA =====================
 // القطع فاضية — تتضاف مع الروابط لاحقاً
 const allParts = [
-  // مثال على الشكل (معطل حالياً):
-  // { id:"rtx5090", type:"GPU", company:"NVIDIA", series:"RTX 50 Series", name:"RTX 5090", specs:"32GB GDDR7 · 575W · 8K", price:7495, tier:10, color:"#76b900", amazonUrl:"https://www.amazon.sa/dp/XXXXXXXX" },
+  { id:"rtx5060_msi", type:"GPU", company:"MSI", series:"RTX 50 Series", name:"MSI GeForce RTX 5060", specs:"8GB GDDR7 · 1080p · DLSS 4 · OC Edition", price:1125, tier:4, color:"#76b900", amazonUrl:"https://www.amazon.sa/dp/B09729YMPT" },
+  { id:"rtx5060_gigabyte", type:"GPU", company:"Gigabyte", series:"RTX 50 Series", name:"Gigabyte RTX 5060 EAGLE OC 8GB", specs:"8GB GDDR7 · 1080p · DLSS 4 · EAGLE OC", price:1150, tier:4, color:"#76b900", amazonUrl:"https://www.amazon.sa/dp/B0F6NGCZG2" },
 ];
  
 const sidebarCats = [
